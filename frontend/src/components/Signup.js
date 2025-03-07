@@ -1,26 +1,77 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-
+// src/components/Signup.js
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom'; // For navigation to Login page
+import '../../src/Login.css';// Import CSS for styling
+import image from '../assets/Interview image.jpeg'
 const Signup = () => {
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSignup = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    navigate("/dashboard");
+
+    if (!email || !password || !confirmPassword) {
+      setErrorMessage('All fields are required!');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match!');
+      return;
+    }
+
+    // Handle sign-up logic here (e.g., API call)
+
+    setErrorMessage('');
+    alert('Account created successfully!');
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-purple-500 to-indigo-600">
-      <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-        <h2 className="text-3xl font-bold text-center text-gray-800">Sign Up</h2>
-        <p className="text-center text-gray-500">Create an account or <Link to="/" className="text-blue-600">Sign in</Link></p>
-        <form className="mt-6 space-y-4" onSubmit={handleSignup}>
-          <input type="text" placeholder="Full Name" className="input-field" required />
-          <input type="email" placeholder="Email Address" className="input-field" required />
-          <input type="password" placeholder="Password" className="input-field" required />
-
-          <button type="submit" className="btn-primary">Sign Up</button>
+    <div className="login-container">
+      <div className="image-section">
+        {/* <img src={image} alt="Login Background" />   */}
+      </div>
+      <div className="login-form">
+        <h2>Sign Up</h2>
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <label htmlFor="email">Email:</label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+            />
+          </div>
+          <div className="input-group">
+            <label htmlFor="password">Password:</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+            />
+          </div>
+          <div className="input-group">
+            <label htmlFor="confirmPassword">Confirm Password:</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+            />
+          </div>
+          <button type="submit" className="login-btn">Sign Up</button>
         </form>
+        <p>
+          Already have an account? <Link to="/">Login</Link>
+        </p>
       </div>
     </div>
   );

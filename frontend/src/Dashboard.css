@@ -1,0 +1,36 @@
+.tiles-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 tiles per row */
+  gap: 20px; /* Space between tiles */
+  padding: 20px;
+  justify-items: center; /* Centers the tiles within each column */
+}
+
+.tile {
+  width: 400px; /* Fixed tile width */
+  height: 200px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.tile:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Make it responsive for smaller screens */
+@media (max-width: 900px) {
+  .tiles-container {
+      grid-template-columns: repeat(2, 1fr); /* 2 tiles per row on smaller screens */
+  }
+}
+
+@media (max-width: 600px) {
+  .tiles-container {
+      grid-template-columns: repeat(1, 1fr); /* 1 tile per row on very small screens */
+  }
+}
