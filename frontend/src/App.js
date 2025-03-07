@@ -8,6 +8,7 @@ import Toolbar from './components/Toolbar';
 function App() {
   return (
     <Router>
+      {print('test')}
       <Toolbar/>
       <Routes>
         <Route path="/" element={<Login />} />
