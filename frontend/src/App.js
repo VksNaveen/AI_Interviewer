@@ -3,17 +3,17 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
-import Toolbar from './components/Toolbar';
+import UserProfileUpdate from "./components/UserProfileUpdate";
+import ProtectedRoute from "./components/ProtectedRoute"; // ✅ Import it
 
 function App() {
   return (
     <Router>
-      {print('test')}
-      <Toolbar/>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+        <Route path="/profile-update" element={<ProtectedRoute element={<UserProfileUpdate />} />} />
       </Routes>
     </Router>
   );

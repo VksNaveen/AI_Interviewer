@@ -1,67 +1,42 @@
-// src/components/Login.js
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // For navigation to Sign-Up page
-import '../../src/Login.css'; // Import CSS for styling
-import image from '../assets/Interview image.jpeg'
-import { useNavigate  } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate ();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    const response = await fetch("http://localhost:8000/auth/login/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-    // Simple validation for fields
-    if (!email || !password) {
-      setErrorMessage('Both fields are required!');
-      return;
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem("token", data.token);
+      navigate("/dashboard");
+    } else {
+      alert("Invalid credentials!");
     }
-
-    // Handle login logic here (API call, etc.)
-
-    setErrorMessage('');
-    alert('Login successful!');
-    navigate("/dashboard");
   };
 
   return (
-    <div className="login-container">
-      <div className="image-section">
-        {/* <img src={image} alt="Login Background" />  Replace with your image */}
-      </div>
-      <div className="login-form">
-      
-        <h2>Login</h2>
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label htmlFor="email">Email:</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-            />
-          </div>
-          <div className="input-group">
-            <label htmlFor="password">Password:</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
-          </div>
-          <button type="submit" className="login-btn">Login</button>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-3xl font-bold text-center text-gray-800">Login</h2>
+        <form className="mt-6" onSubmit={handleLogin}>
+          <input type="email" name="email" placeholder="Email" className="input" onChange={handleChange} required />
+          <input type="password" name="password" placeholder="Password" className="input" onChange={handleChange} required />
+          <button type="submit" className="btn-primary">Login</button>
         </form>
-        <p>
-          Don't have an account? <Link to="/signup">Sign Up</Link>
+        <p className="mt-4 text-center">
+          Don't have an account? <Link to="/signup" className="text-blue-500 hover:underline">Sign Up</Link>
         </p>
       </div>
     </div>

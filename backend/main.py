@@ -1,16 +1,34 @@
 from fastapi import FastAPI
-from backend.routes import auth, interview
+from fastapi.middleware.cors import CORSMiddleware
 from backend.database import Base, engine
-
-# Initialize database tables
-Base.metadata.create_all(bind=engine)
+from backend.routes import auth, profile_routes
 
 app = FastAPI()
 
-# Include routes
+# ✅ Initialize Database
+def init_db():
+    print("📢 Initializing Database...")
+    Base.metadata.create_all(bind=engine)
+
+init_db()
+
+# ✅ Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # React frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ✅ Include Routes
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(interview.router, prefix="/interview", tags=["Interviews"])
+app.include_router(profile_routes.router, prefix="/profile", tags=["Profile Management"])
+
 
 @app.get("/")
 def home():
     return {"message": "Welcome to AI Interviewer API!"}
+
+for route in app.routes:
+    print(route.path, route.methods)
