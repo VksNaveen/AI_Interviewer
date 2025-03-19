@@ -10,11 +10,16 @@
         "eject": "react-scripts eject"
     },
     "dependencies": {
+        "@babel/standalone": "^7.26.10",
+        "@react-icons/all-files": "^4.1.0",
         "axios": "^1.8.1",
+        "primeicons": "^7.0.0",
+        "primereact": "^10.9.3",
         "react": "^18.0.0",
         "react-dom": "^18.0.0",
         "react-router-dom": "^7.2.0",
-        "react-scripts": "5.0.1"
+        "react-scripts": "5.0.1",
+        "react-syntax-highlighter": "^15.6.1"
     },
     "license": "MIT",
     "devDependencies": {

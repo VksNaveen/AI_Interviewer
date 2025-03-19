@@ -5,15 +5,19 @@ import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import UserProfileUpdate from "./components/UserProfileUpdate";
 import ProtectedRoute from "./components/ProtectedRoute"; // ✅ Import it
+import Toolbar from "./components/Toolbar"
+
 
 function App() {
   return (
     <Router>
+      <Toolbar/> 
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
         <Route path="/profile-update" element={<ProtectedRoute element={<UserProfileUpdate />} />} />
+        
       </Routes>
     </Router>
   );

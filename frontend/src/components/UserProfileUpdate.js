@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import '../Profile.css';
+
 
 const UserProfileUpdate = () => {
   const [formData, setFormData] = useState({
@@ -32,27 +34,16 @@ const UserProfileUpdate = () => {
       }
 
       const response = await fetch("http://localhost:8000/profile", {
-        method: "POST", // ✅ Use POST instead of GET
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }), // ✅ Send token in the request body
+        body: JSON.stringify({ token }),
       });
 
       const data = await response.json();
       if (response.ok) {
         setFormData({
-          experience: data.experience || "",
-          skills: data.skills || [],
-          preferred_role: data.preferred_role || "",
-          interest_area: data.interest_area || "",
-          education: data.education || "",
-          degree: data.degree || "",
-          certifications: data.certifications || "",
-          projects: data.projects || "",
-          linkedin: data.linkedin || "",
-          github: data.github || "",
-          expected_salary: data.expected_salary || "",
-          location_preference: data.location_preference || "",
-          resume: null, // Reset resume field to avoid uncontrolled input warning
+          ...data,
+          resume: null,
         });
       } else {
         console.error("Error fetching profile:", data.message);
@@ -86,12 +77,12 @@ const UserProfileUpdate = () => {
     }
 
     const formDataToSend = new FormData();
-    formDataToSend.append("token", token); // ✅ Send token in PUT request as well
+    formDataToSend.append("token", token);
     for (const key in formData) {
       if (key === "skills") {
-        formDataToSend.append(key, formData[key].join(",")); // Convert array to string
+        formDataToSend.append(key, formData[key].join(","));
       } else if (key === "resume" && formData.resume) {
-        formDataToSend.append(key, formData.resume); // Handle file separately
+        formDataToSend.append(key, formData.resume);
       } else {
         formDataToSend.append(key, formData[key]);
       }
@@ -110,14 +101,14 @@ const UserProfileUpdate = () => {
   };
 
   return (
-    <div className="container">
-      <h2>Update Profile</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Experience:</label>
-        <input type="number" name="experience" value={formData.experience} onChange={handleChange} />
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-6">
+      <h2 className="text-2xl font-bold mb-4 text-center">Update Profile</h2>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+        <label className="block">Experience:</label>
+        <input className="border p-2 rounded" type="number" name="experience" value={formData.experience} onChange={handleChange} />
 
-        <label>Skills:</label>
-        <select multiple onChange={handleMultiSelectChange}>
+        <label className="block">Skills:</label>
+        <select multiple className="border p-2 rounded" onChange={handleMultiSelectChange}>
           {skillsOptions.map((skill) => (
             <option key={skill} value={skill} selected={formData.skills.includes(skill)}>
               {skill}
@@ -125,8 +116,8 @@ const UserProfileUpdate = () => {
           ))}
         </select>
 
-        <label>Preferred Role:</label>
-        <select name="preferred_role" value={formData.preferred_role} onChange={handleChange}>
+        <label className="block">Preferred Role:</label>
+        <select className="border p-2 rounded" name="preferred_role" value={formData.preferred_role} onChange={handleChange}>
           {roleOptions.map((role) => (
             <option key={role} value={role}>
               {role}
@@ -134,8 +125,8 @@ const UserProfileUpdate = () => {
           ))}
         </select>
 
-        <label>Interest Area:</label>
-        <select name="interest_area" value={formData.interest_area} onChange={handleChange}>
+        <label className="block">Interest Area:</label>
+        <select className="border p-2 rounded" name="interest_area" value={formData.interest_area} onChange={handleChange}>
           {interestAreas.map((area) => (
             <option key={area} value={area}>
               {area}
@@ -143,16 +134,18 @@ const UserProfileUpdate = () => {
           ))}
         </select>
 
-        <label>Education:</label>
-        <input type="text" name="education" value={formData.education} onChange={handleChange} />
+        <label className="block">Education:</label>
+        <input className="border p-2 rounded" type="text" name="education" value={formData.education} onChange={handleChange} />
 
-        <label>Certifications:</label>
-        <input type="text" name="certifications" value={formData.certifications} onChange={handleChange} />
+        <label className="block">Certifications:</label>
+        <input className="border p-2 rounded" type="text" name="certifications" value={formData.certifications} onChange={handleChange} />
 
-        <label>Resume Upload:</label>
-        <input type="file" name="resume" onChange={handleFileChange} />
+        <label className="block">Resume Upload:</label>
+        <input className="border p-2 rounded" type="file" name="resume" onChange={handleFileChange} />
 
-        <button type="submit">Update Profile</button>
+        <button className="bg-blue-500 text-white p-2 rounded mt-4 hover:bg-blue-700" type="submit">
+          Update Profile
+        </button>
       </form>
     </div>
   );

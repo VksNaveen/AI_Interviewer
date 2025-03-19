@@ -1,11 +1,11 @@
 // src/components/Toolbar.js
 import React from 'react';
-import 'E:/Capstone 2/AI_Interviewer/frontend/src/Toolbar.css';
+import '../../src/Toolbar.css';
 
 const Toolbar = () => {
   return (
     <div className="toolbar">
-      <h1>AI Interview Preparation Coach</h1>
+      <h1>AI INTERVIEW PREPARATION COACH</h1>
     </div>
   );
 };

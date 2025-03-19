@@ -2,17 +2,19 @@
 
 /* Toolbar styling */
 .toolbar {
-    background-color: #3e3bdf; /* Green background */
-    color: white; /* White text */
+    background-color: #ffffff; /* Green background */
+    color: rgb(112, 67, 217); /* White text */
     padding: 15px 0;
+    height: 40px;
+    justify-content: center;
     text-align: center;
-    font-size: 24px;
+    font-size: 13px;
     font-weight: bold;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: 1000;  
     margin-bottom: 20px;
   }
   
