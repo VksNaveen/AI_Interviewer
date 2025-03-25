@@ -2,7 +2,6 @@ import React from "react";
 import "../../src/Dashboard.css";
 import { useNavigate } from "react-router-dom";
 
-
 const mockInterviews = [
   { date: "March 10, 2025", score: 85, feedback: "Good communication, improve technical depth." },
   { date: "March 5, 2025", score: 78, feedback: "Solid problem-solving, work on speed." },
@@ -10,22 +9,22 @@ const mockInterviews = [
 ];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
 
-  const navigate = useNavigate()
+  const handleProfile = () => {
+    navigate("/profile-update");
+  };
 
-  const handleProfile=()=>{
-    navigate("/profile-update")
-  
-  }
+  const handleStartInterview = () => {
+    navigate("/start-interview");
+  };
 
   return (
     <div className="dashboard-container">
       <aside className="sidebar">
         <button className="profile-button" onClick={handleProfile}>UPDATE PROFILE</button>
-        
       </aside>
       <main className="main-content">
-        {/* <h1 className="dashboard-title">AI Mock Interview Dashboard</h1> */}
         <div className="tiles-container">
           <div className="tile">Total Interviews: {mockInterviews.length}</div>
           <div className="tile">Average Score: {Math.round(mockInterviews.reduce((acc, cur) => acc + cur.score, 0) / mockInterviews.length)}</div>
@@ -39,7 +38,11 @@ const Dashboard = () => {
             </div>
           ))}
         </div>
+                <div className="start-interview-container">
+          <button className="start-interview-button" onClick={handleStartInterview}>START INTERVIEW</button>
+        </div>
       </main>
+      
     </div>
   );
 };

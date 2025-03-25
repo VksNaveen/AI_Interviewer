@@ -117,3 +117,24 @@ background-color: #ffff;
   background-color: rgb(163, 133, 227); /* Hover background color */
   cursor: pointer;
 }
+
+.start-interview-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.start-interview-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.start-interview-button:hover {
+  background-color: #45a049;
+}

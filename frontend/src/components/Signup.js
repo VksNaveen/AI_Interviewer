@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import '/Users/sonaselvaraj/Documents/Capstone/AI Interviewer 2/AI_Interviewer/frontend/src/Login.css';
+import '../Login.css';
 
 const Signup = () => {
   const navigate = useNavigate();
