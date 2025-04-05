@@ -1,0 +1,131 @@
+/* SelfIntroduction.css */
+.dashboard-container {
+  font-family: Arial, sans-serif;
+  padding: 0;
+  margin: 0;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+}
+
+.top-nav {
+  background-color: #6a0dad;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-bar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.nav-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 auto; /* Center the title */
+  text-align: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-button {
+  background-color: white;
+  color: #6a0dad;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.nav-button:hover {
+  background-color: #5a0c9d;
+  color: white;
+}
+
+.main-content {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.page-heading {
+  font-size: 2rem;
+  color: #333;
+}
+
+.ai-interaction-container {
+  margin-top: 2rem;
+  position: relative;
+}
+
+.ai-icon {
+  margin: 0 auto;
+  color: #6a0dad;
+  animation: none;
+}
+
+.ai-icon.blinking {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  font-size: 1.2rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+.mic-container {
+  margin-top: 2rem;
+}
+
+.mic-icon {
+  transition: color 0.3s ease;
+}
+
+.mic-icon.recording {
+  color: red;
+}
+
+.timer {
+  font-size: 1.5rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+.next-button-container {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+}
+
+.next-button {
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  color: white;
+  background-color: #6a0dad;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.next-button.disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.next-button:hover:not(.disabled) {
+  background-color: #5a0c9d;
+}

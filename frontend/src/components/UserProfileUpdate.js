@@ -130,7 +130,7 @@ const UserProfileUpdate = () => {
   return (
     <div className="profile-update-dashboard-container">
       <nav className="navbar">
-        <button className="nav-button" onClick={() => navigate("/")}>Home</button>
+        <button className="nav-button" onClick={() => navigate("/dashboard")}>Home</button>
         <h1 className="navbar-title">AI INTERVIEW PREPARATION COACH</h1>
         <div className="nav-right">
           <button className="nav-button" onClick={handleLogout}>Logout</button>
