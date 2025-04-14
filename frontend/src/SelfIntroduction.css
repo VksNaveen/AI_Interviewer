@@ -1,10 +1,72 @@
 /* SelfIntroduction.css */
+/* General Styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+}
+
 .dashboard-container {
   font-family: Arial, sans-serif;
   padding: 0;
   margin: 0;
   background-color: #f9f9f9;
   min-height: 100vh;
+}
+
+/* Toolbar */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Purple gradient */
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-logo .logo {
+  width: 50px;
+  height: 50px;
+}
+
+.toolbar-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  flex: 1;
+}
+
+.toolbar-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.toolbar-link {
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Purple gradient */
+  color: white;
+  border: none;
+  border-radius: 50px; /* Rounded corners */
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+.toolbar-link:hover {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0); /* Reverse gradient on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Stronger shadow on hover */
+}
+
+.toolbar-link:active {
+  transform: scale(0.98); /* Slight press effect */
 }
 
 .top-nav {
@@ -49,23 +111,30 @@
   color: white;
 }
 
+/* Main Content */
 .main-content {
+  margin-top: 100px; /* Offset for fixed toolbar */
+  padding: 2rem;
   text-align: center;
-  margin-top: 2rem;
 }
 
 .page-heading {
   font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
   color: #333;
 }
 
 .ai-interaction-container {
-  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
   position: relative;
 }
 
 .ai-icon {
-  margin: 0 auto;
+  margin-bottom: 1rem;
   color: #6a0dad;
   animation: none;
 }
@@ -74,58 +143,133 @@
   animation: blink 1s infinite;
 }
 
+.blinking {
+  animation: blinking 1s infinite;
+}
+
 @keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
   50% {
     opacity: 0.5;
   }
 }
 
+@keyframes blinking {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .status-text {
   font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
   color: #555;
   margin-top: 1rem;
 }
 
 .mic-container {
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .mic-icon {
-  transition: color 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .mic-icon.recording {
+  transform: scale(1.2);
   color: red;
 }
 
+/* Timer */
 .timer {
-  font-size: 1.5rem;
-  color: #555;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: red;
   margin-top: 1rem;
 }
 
 .next-button-container {
+  margin-top: 2rem;
   position: absolute;
   bottom: 2rem;
   right: 2rem;
 }
 
 .next-button {
-  padding: 0.8rem 2rem;
-  font-size: 1rem;
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #ff416c, #ff4b2b); /* Same gradient as Login button */
   color: white;
-  background-color: #6a0dad;
   border: none;
-  border-radius: 5px;
+  border-radius: 50px; /* Rounded corners */
+  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+.next-button:hover {
+  background: linear-gradient(90deg, #ff4b2b, #ff416c); /* Reverse gradient on hover */
+  box-shadow: 0 6px 12px rgba(255, 0, 0, 0.5); /* Stronger shadow on hover */
+}
+
+.next-button:active {
+  transform: scale(0.98); /* Slight press effect */
 }
 
 .next-button.disabled {
-  background-color: #ccc;
+  background: #ccc; /* Disabled state */
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-.next-button:hover:not(.disabled) {
-  background-color: #5a0c9d;
+.gradient-button {
+  background: linear-gradient(90deg, #4a00e0, #8e2de2);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.gradient-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.gradient-button:active {
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.option-button {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 10px 15px;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.option-button:hover {
+  background: #e0e0e0;
+}
+
+.option-button.selected {
+  background: #6a11cb;
+  color: white;
+  border: none;
 }

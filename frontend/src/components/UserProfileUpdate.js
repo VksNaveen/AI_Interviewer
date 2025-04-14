@@ -1,266 +1,340 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import '../Profile.css';
+import React, { useState } from "react";
+import axios from "axios";
+import Select from "react-select"; 
+import "../../src/UserProfileUpdate.css"; 
+
+const roleOptions = [
+  "Full Stack Developer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Machine Learning Engineer",
+  "Data Scientist",
+  "Data Analyst",
+  "Data Engineer",
+  "DevOps Engineer",
+  "Cloud Engineer",
+  "Cybersecurity Specialist",
+  "UI/UX Designer",
+  "Product Manager",
+  "Business Analyst",
+  "HR / Talent Acquisition",
+  "Project Manager",
+  "Scrum Master",
+  "Software Engineer",
+  "AI Researcher",
+  "Technical Lead",
+  "Solution Architect",
+  "IT Manager",
+  "Business Development Manager",
+  "Operations Manager",
+  "Marketing Manager",
+  "Sales Manager",
+];
 
 const UserProfileUpdate = () => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    experience: "",
-    company_experience: [{ company: "", years: "" }],
-    skills: [],
-    preferred_role: "",
-    interest_area: "",
-    education: "",
-    education_year: "",
-    certifications: [],
-    projects: "",
-    linkedin: "",
-    github: "",
-    expected_salary: "",
-    location_preference: "",
-    resume: null,
-  });
+  const [companyExperience, setCompanyExperience] = useState([{ company_name: "", years: "" }]);
+  const [skills, setSkills] = useState([]);
+  const [preferredRole, setPreferredRole] = useState("");
+  const [education, setEducation] = useState([{ degree: "", institution: "", year_of_passing: "", grade_or_percentage: "" }]);
+  const [certifications, setCertifications] = useState([]);
+  const [resume, setResume] = useState(null);
 
-  const skillsOptions = ["Python", "Java", "React", "Machine Learning", "C++", "JavaScript", "SQL", "Others"];
-  const roleOptions = ["Software Engineer", "Data Scientist", "Product Manager", "DevOps Engineer", "Others"];
-  const interestAreas = ["AI/ML", "Web Development", "Data Analysis", "Cybersecurity", "Others"];
-  const degreeOptions = ["Bachelor's", "Master's"];
-  const locationOptions = ["Remote", "Onsite"];
+  const skillOptions = [
+    { value: "Python", label: "Python" },
+    { value: "Java", label: "Java" },
+    { value: "C++", label: "C++" },
+    { value: "JavaScript", label: "JavaScript" },
+    { value: "React", label: "React" },
+    { value: "Angular", label: "Angular" },
+    { value: "CSS", label: "CSS" },
+    { value: "HTML", label: "HTML" },
+    { value: "Node.js", label: "Node.js" },
+    { value: "Machine Learning", label: "Machine Learning" },
+    { value: "Deep Learning", label: "Deep Learning" },
+    { value: "Large Language Models (LLM)", label: "Large Language Models (LLM)" },
+    { value: "Project Management", label: "Project Management" },
+    { value: "Agile Methodologies", label: "Agile Methodologies" },
+    { value: "DevOps", label: "DevOps" },
+    { value: "Cloud Computing", label: "Cloud Computing" },
+    { value: "Kubernetes", label: "Kubernetes" },
+    { value: "Docker", label: "Docker" },
+    { value: "Data Analysis", label: "Data Analysis" },
+    { value: "Data Engineering", label: "Data Engineering" },
+  ];
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found. Please log in.");
-        return;
-      }
+  const certificationOptions = [
+    { value: "AWS Certified Solutions Architect", label: "AWS Certified Solutions Architect" },
+    { value: "Microsoft Azure Fundamentals", label: "Microsoft Azure Fundamentals" },
+    { value: "Google Cloud Associate Engineer", label: "Google Cloud Associate Engineer" },
+    { value: "PMP Certification", label: "PMP Certification" },
+    { value: "Certified Scrum Master", label: "Certified Scrum Master" },
+    { value: "TensorFlow Developer Certificate", label: "TensorFlow Developer Certificate" },
+    { value: "IBM Data Science Professional Certificate", label: "IBM Data Science Professional Certificate" },
+    { value: "Oracle Java SE Certification", label: "Oracle Java SE Certification" },
+    { value: "CompTIA Security+", label: "CompTIA Security+" },
+    { value: "Adobe Certified Professional", label: "Adobe Certified Professional" },
+    { value: "Certified Ethical Hacker (CEH)", label: "Certified Ethical Hacker (CEH)" },
+    { value: "Cisco Certified Network Associate (CCNA)", label: "Cisco Certified Network Associate (CCNA)" },
+    { value: "Microsoft Certified: Azure AI Engineer", label: "Microsoft Certified: Azure AI Engineer" },
+    { value: "Google Professional Data Engineer", label: "Google Professional Data Engineer" },
+    { value: "AWS Certified Developer", label: "AWS Certified Developer" },
+    { value: "Certified Kubernetes Administrator (CKA)", label: "Certified Kubernetes Administrator (CKA)" },
+    { value: "Certified Information Systems Security Professional (CISSP)", label: "Certified Information Systems Security Professional (CISSP)" },
+    { value: "ITIL Foundation Certification", label: "ITIL Foundation Certification" },
+    { value: "Certified Data Scientist (CDS)", label: "Certified Data Scientist (CDS)" },
+    { value: "Salesforce Certified Administrator", label: "Salesforce Certified Administrator" },
+  ];
 
-      const response = await fetch("http://localhost:8000/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setFormData({
-          ...data,
-          company_experience: data.company_experience || [{ company: "", years: "" }],
-          skills: data.skills || [],
-          certifications: data.certifications || [],
-          resume: null,
-        });
-      } else {
-        console.error("Error fetching profile:", data.message);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // Custom styles for react-select
+  const customSelectStyles = {
+    control: (provided) => ({
+      ...provided,
+      border: "1px solid #ccc",
+      borderRadius: "5px",
+      padding: "5px",
+      fontSize: "14px",
+    }),
+    menu: (provided) => ({
+      ...provided,
+      zIndex: 1000,
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isFocused ? "#8e2de2" : "white",
+      color: state.isFocused ? "white" : "black",
+      fontSize: "14px",
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: "#8e2de2",
+      color: "white",
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: "white",
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: "white",
+      ":hover": {
+        backgroundColor: "#4a00e0",
+        color: "white",
+      },
+    }),
   };
 
-  const handleMultiSelectChange = (e) => {
-    const selectedOptions = Array.from(e.target.selectedOptions, (option) => option.value);
-    setFormData((prev) => ({ ...prev, [e.target.name]: selectedOptions }));
+  const handleAddCompanyExperience = () => {
+    setCompanyExperience([...companyExperience, { company_name: "", years: "" }]);
   };
 
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, resume: e.target.files[0] }));
+  const handleRemoveCompanyExperience = (index) => {
+    const updatedExperience = companyExperience.filter((_, i) => i !== index);
+    setCompanyExperience(updatedExperience);
   };
 
-  const handleCompanyExperienceChange = (index, e) => {
-    const { name, value } = e.target;
-    const updatedCompanyExperience = formData.company_experience.map((exp, i) =>
-      i === index ? { ...exp, [name]: value } : exp
-    );
-    setFormData((prev) => ({ ...prev, company_experience: updatedCompanyExperience }));
+  const handleAddEducation = () => {
+    setEducation([...education, { degree: "", institution: "", year_of_passing: "", grade_or_percentage: "" }]);
   };
 
-  const addCompanyExperience = () => {
-    setFormData((prev) => ({
-      ...prev,
-      company_experience: [...prev.company_experience, { company: "", years: "" }],
-    }));
+  const handleRemoveEducation = (index) => {
+    const updatedEducation = education.filter((_, i) => i !== index);
+    setEducation(updatedEducation);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("No token found. Please log in.");
-      return;
+    const formData = new FormData();
+    formData.append("company_experience", JSON.stringify(companyExperience));
+    formData.append("skills", JSON.stringify(skills.map((skill) => skill.value)));
+    formData.append("preferred_role", preferredRole);
+    formData.append("education", JSON.stringify(education));
+    formData.append("certifications", JSON.stringify(certifications.map((cert) => cert.value)));
+    if (resume) {
+      formData.append("resume", resume);
     }
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("token", token);
-    for (const key in formData) {
-      if (key === "skills" || key === "certifications") {
-        formDataToSend.append(key, formData[key].join(","));
-      } else if (key === "resume" && formData.resume) {
-        formDataToSend.append(key, formData.resume);
-      } else if (key === "company_experience") {
-        formDataToSend.append(key, JSON.stringify(formData[key]));
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
+    console.log("API URL:", "http://localhost:8000/profile/updateProfile/");
+    console.log("Form Data:", formData);
+
+    try {
+      const response = await axios.put("http://localhost:8000/profile/updateProfile/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log("Profile updated successfully:", response.data);
+    } catch (error) {
+      console.error("Error updating profile:", error);
     }
-
-    const response = await fetch("http://localhost:8000/profile", {
-      method: "PUT",
-      body: formDataToSend,
-    });
-
-    if (response.ok) {
-      alert("Profile Updated Successfully!");
-    } else {
-      alert("Update failed!");
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
   };
 
   return (
-    <div className="profile-update-dashboard-container">
-      <nav className="navbar">
-        <button className="nav-button" onClick={() => navigate("/dashboard")}>Home</button>
-        <h1 className="navbar-title">AI INTERVIEW PREPARATION COACH</h1>
-        <div className="nav-right">
-          <button className="nav-button" onClick={handleLogout}>Logout</button>
-          <button className="nav-button" onClick={() => navigate("/profile-update")}>
-            <i className="fas fa-user-edit"></i>
+    <div className="profile-update-page">
+      <header className="toolbar">
+        <div className="toolbar-logo">
+          <img src="/AI_INT.png" alt="Logo" className="logo" />
+        </div>
+        <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
+        <div className="toolbar-links">
+          <button className="toolbar-link" onClick={() => window.location.href = "/dashboard"}>
+            Home
+          </button>
+          <button className="toolbar-link" onClick={() => window.location.href = "/"}>
+            Logout
           </button>
         </div>
-      </nav>
-      <main className="profile-update-main-content">
-        <div className="profile-update-container">
-          <h2 className="profile-update-title">Update Profile</h2>
-          <form onSubmit={handleSubmit} className="profile-update-form">
-            <label className="profile-update-label">Total Years of Experience:</label>
-            <input
-              className="profile-update-input"
-              type="number"
-              name="experience"
-              value={formData.experience}
-              onChange={handleChange}
-              min="0"
-            />
+      </header>
 
-            <label className="profile-update-label">Company Experience:</label>
-            {formData.company_experience.map((exp, index) => (
-              <div key={index} className="company-experience">
+      <div className="profile-update-container">
+        <h2 className="page-title">Update Profile</h2>
+
+        <form onSubmit={handleSubmit} className="profile-form">
+          <div className="form-section">
+            <h3>Company Experience</h3>
+            {companyExperience.map((exp, index) => (
+              <div key={index} className="form-row">
                 <input
-                  className="profile-update-input"
                   type="text"
-                  name="company"
-                  placeholder="Company"
-                  value={exp.company}
-                  onChange={(e) => handleCompanyExperienceChange(index, e)}
+                  placeholder="Company Name"
+                  value={exp.company_name}
+                  onChange={(e) => {
+                    const newExperience = [...companyExperience];
+                    newExperience[index].company_name = e.target.value;
+                    setCompanyExperience(newExperience);
+                  }}
                 />
                 <input
-                  className="profile-update-input"
-                  type="text"
-                  name="years"
+                  type="number"
                   placeholder="Years"
                   value={exp.years}
-                  onChange={(e) => handleCompanyExperienceChange(index, e)}
+                  onChange={(e) => {
+                    const newExperience = [...companyExperience];
+                    newExperience[index].years = e.target.value;
+                    setCompanyExperience(newExperience);
+                  }}
                 />
+                <button
+                  type="button"
+                  className="remove-button"
+                  onClick={() => handleRemoveCompanyExperience(index)}
+                >
+                  ✖
+                </button>
               </div>
             ))}
-            <button type="button" onClick={addCompanyExperience} className="profile-update-button">
-              Add Company Experience
+            <button type="button" className="add-button gradient-button" onClick={handleAddCompanyExperience}>
+              Add Experience
             </button>
+          </div>
 
-            <label className="profile-update-label">Skills:</label>
-            <select
-              multiple
-              className="profile-update-input"
-              name="skills"
-              onChange={handleMultiSelectChange}
-            >
-              {skillsOptions.map((skill) => (
-                <option key={skill} value={skill} selected={formData.skills.includes(skill)}>
-                  {skill}
-                </option>
-              ))}
-            </select>
+          <div className="form-section">
+            <h3>Skills</h3>
+            <Select
+              isMulti
+              options={skillOptions}
+              value={skills}
+              onChange={(selectedOptions) => setSkills(selectedOptions)}
+              styles={customSelectStyles} // Apply custom styles
+              className="multi-select-dropdown"
+              placeholder="Select your skills"
+            />
+          </div>
 
-            <label className="profile-update-label">Preferred Role:</label>
+          <div className="form-section">
+            <h3>Preferred Role</h3>
             <select
-              className="profile-update-input"
-              name="preferred_role"
-              value={formData.preferred_role}
-              onChange={handleChange}
+              value={preferredRole}
+              onChange={(e) => setPreferredRole(e.target.value)}
+              className="dropdown"
             >
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
+              {roleOptions.map((role, index) => (
+                <option key={index} value={role}>
                   {role}
                 </option>
               ))}
             </select>
+          </div>
 
-            <label className="profile-update-label">Interest Area:</label>
-            <select
-              className="profile-update-input"
-              name="interest_area"
-              value={formData.interest_area}
-              onChange={handleChange}
-            >
-              {interestAreas.map((area) => (
-                <option key={area} value={area}>
-                  {area}
-                </option>
-              ))}
-            </select>
-
-            <label className="profile-update-label">Education Qualification:</label>
-            <input
-              className="profile-update-input"
-              type="text"
-              name="education"
-              value={formData.education}
-              onChange={handleChange}
-            />
-
-            <label className="profile-update-label">Year of Education:</label>
-            <input
-              className="profile-update-input"
-              type="text"
-              name="education_year"
-              value={formData.education_year}
-              onChange={handleChange}
-            />
-
-            <label className="profile-update-label">Certifications:</label>
-            <select
-              multiple
-              className="profile-update-input"
-              name="certifications"
-              onChange={handleMultiSelectChange}
-            >
-              {["Certification 1", "Certification 2", "Certification 3", "Others"].map((cert) => (
-                <option key={cert} value={cert} selected={formData.certifications.includes(cert)}>
-                  {cert}
-                </option>
-              ))}
-            </select>
-
-            <label className="profile-update-label">Resume Upload:</label>
-            <input className="profile-update-input" type="file" name="resume" onChange={handleFileChange} />
-
-            <button className="profile-update-button" type="submit">
-              Update Profile
+          <div className="form-section">
+            <h3>Education</h3>
+            {education.map((edu, index) => (
+              <div key={index} className="form-row">
+                <input
+                  type="text"
+                  placeholder="Degree"
+                  value={edu.degree}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].degree = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Institution"
+                  value={edu.institution}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].institution = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <input
+                  type="number"
+                  placeholder="Year of Passing"
+                  value={edu.year_of_passing}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].year_of_passing = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Grade/Percentage (Optional)"
+                  value={edu.grade_or_percentage}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].grade_or_percentage = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="remove-button"
+                  onClick={() => handleRemoveEducation(index)}
+                >
+                  ✖
+                </button>
+              </div>
+            ))}
+            <button type="button" className="add-button gradient-button" onClick={handleAddEducation}>
+              Add Education
             </button>
-          </form>
-        </div>
-      </main>
+          </div>
+
+          <div className="form-section">
+            <h3>Certifications</h3>
+            <Select
+              isMulti
+              options={certificationOptions}
+              value={certifications}
+              onChange={(selectedOptions) => setCertifications(selectedOptions)}
+              styles={customSelectStyles} // Apply custom styles
+              className="multi-select-dropdown"
+              placeholder="Select your certifications"
+            />
+          </div>
+
+          <div className="form-section">
+            <h3>Resume Upload</h3>
+            <input type="file" onChange={(e) => setResume(e.target.files[0])} className="file-input" />
+          </div>
+
+          <button type="submit" className="submit-button gradient-button">
+            Update Profile
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

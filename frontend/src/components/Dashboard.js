@@ -18,13 +18,19 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       {/* Top Navigation Bar */}
-      <header className="top-nav">
-        <nav className="nav-bar">
-          <ul className="nav-links">
-            <li onClick={() => navigate("/profile-update")}>Profile</li>
-            <li onClick={() => navigate("/")}>Logout</li>
-          </ul>
-        </nav>
+      <header className="toolbar">
+        <div className="toolbar-logo">
+          <img src="/AI_INT.png" alt="Logo" className="logo" />
+        </div>
+        <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
+        <div className="toolbar-links">
+          <a onClick={() => navigate("/profile-update")} className="toolbar-link">
+            Profile
+          </a>
+          <a onClick={() => navigate("/")} className="toolbar-link">
+            Logout
+          </a>
+        </div>
       </header>
 
       {/* Main Content */}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from backend.database import Base
 
@@ -7,18 +7,11 @@ class Profile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
-    experience = Column(Integer, nullable=True)
-    skills = Column(Text, nullable=True)  # Store JSON-encoded list of skills
-    preferred_role = Column(String(100), nullable=True)
-    interest_area = Column(String(100), nullable=True)
-    education = Column(String(200), nullable=True)
-    degree = Column(String(100), nullable=True)
-    certifications = Column(Text, nullable=True)
-    projects = Column(Text, nullable=True)
-    linkedin = Column(String(200), nullable=True)
-    github = Column(String(200), nullable=True)
-    expected_salary = Column(Integer, nullable=True)
-    location_preference = Column(String(50), nullable=True)
-    resume_filename = Column(String(200), nullable=True)
+    company_experience = Column(JSON, nullable=True)  # List of company experience
+    skills = Column(JSON, nullable=True)  # List of skills
+    preferred_role = Column(String, nullable=True)
+    education = Column(JSON, nullable=True)  # List of education details
+    certifications = Column(JSON, nullable=True)  # List of certifications
+    resume_file = Column(String, nullable=True)  # Path to the uploaded resume
 
     user = relationship("User", back_populates="profile")

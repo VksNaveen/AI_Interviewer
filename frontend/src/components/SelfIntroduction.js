@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { FaMicrophone, FaRobot } from "react-icons/fa"; // Import microphone and AI voice icons
+import { FaMicrophone, FaRobot } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import "../../src/SelfIntroduction.css"; // Ensure this CSS file matches the ProfileUpdate page styling
+import "../../src/SelfIntroduction.css";
 
 const SelfIntroduction = () => {
   const [status, setStatus] = useState("Loading...");
   const [timer, setTimer] = useState(30);
   const [isRecording, setIsRecording] = useState(false);
   const [isNextEnabled, setIsNextEnabled] = useState(false);
-  const [isBlinking, setIsBlinking] = useState(false); // For blinking effect
+  const [isBlinking, setIsBlinking] = useState(false);
+  const [audio, setAudio] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
@@ -23,15 +24,19 @@ const SelfIntroduction = () => {
   const initiateSelfIntro = async () => {
     try {
       setStatus("Starting self-introduction...");
-      setIsBlinking(true); // Start blinking effect
+      setIsBlinking(true);
 
       const startRes = await axios.post(`${BACKEND_URL}/startSelfIntroduction/`);
       const startFile = startRes.data.ai_prompt;
       const startAudio = new Audio(`http://localhost:8000/static/${startFile}`);
-      startAudio.play();
+      setAudio(startAudio);
+
+      startAudio.play().catch((error) => {
+        console.error("Audio playback failed:", error);
+      });
 
       startAudio.onended = async () => {
-        setIsBlinking(false); // Stop blinking effect
+        setIsBlinking(false);
         setStatus("Recording your introduction...");
         setIsRecording(true);
         await startRecording();
@@ -49,14 +54,14 @@ const SelfIntroduction = () => {
             prompt: `Please memorize this self-introduction: ${transcription}`,
           });
 
-          setIsBlinking(true); // Start blinking effect for stopSelfIntroduction
+          setIsBlinking(true);
           const stopRes = await axios.post(`${BACKEND_URL}/stopSelfIntroduction/`);
           const stopFile = stopRes.data.closing_prompt;
           const stopAudio = new Audio(`http://localhost:8000/static/${stopFile}`);
           stopAudio.play();
 
           stopAudio.onended = () => {
-            setIsBlinking(false); // Stop blinking effect
+            setIsBlinking(false);
             setIsNextEnabled(true);
           };
 
@@ -66,7 +71,7 @@ const SelfIntroduction = () => {
     } catch (error) {
       console.error("Error during self-introduction:", error);
       setStatus("Error occurred during self-introduction");
-      setIsBlinking(false); // Stop blinking effect in case of error
+      setIsBlinking(false);
     }
   };
 
@@ -110,20 +115,21 @@ const SelfIntroduction = () => {
 
   return (
     <div className="dashboard-container">
-      <header className="top-nav">
-        <div className="nav-bar">
-          <button className="nav-button" onClick={() => navigate("/dashboard")}>
+      <header className="toolbar">
+        <div className="toolbar-logo">
+          <img src="/AI_INT.png" alt="Logo" className="logo" />
+        </div>
+        <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
+        <div className="toolbar-links">
+          <button className="toolbar-link" onClick={() => navigate("/dashboard")}>
             Home
           </button>
-          <h1 className="nav-title">AI INTERVIEW PREPARATION COACH</h1>
-          <div className="nav-links">
-            <button className="nav-button" onClick={() => navigate("/profile-update")}>
-              Profile
-            </button>
-            <button className="nav-button" onClick={() => navigate("/")}>
-              Logout
-            </button>
-          </div>
+          <button className="toolbar-link" onClick={() => navigate("/profile-update")}>
+            Profile
+          </button>
+          <button className="toolbar-link" onClick={() => navigate("/")}>
+            Logout
+          </button>
         </div>
       </header>
 
@@ -133,7 +139,7 @@ const SelfIntroduction = () => {
         <div className="ai-interaction-container">
           <FaRobot
             size={150}
-            className={`ai-icon ${isBlinking ? "blinking" : ""}`} // AI voice icon with blinking effect
+            className={`ai-icon ${isBlinking ? "blinking" : ""}`}
           />
           <p className="status-text">{status}</p>
           <div className="mic-container">

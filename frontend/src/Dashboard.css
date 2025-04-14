@@ -115,16 +115,24 @@ body {
 }
 
 .start-interview-button {
-  background-color: #28a745;
+  width: 20%;
+  padding: 12px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, #ff00ff, #6600ff); /* Same button gradient as Login page */
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 18px;
   font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .start-interview-button:hover {
-  background-color: #218838;
+  background: linear-gradient(90deg, #ff00ff, #0055ff);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 1);
+}
+
+.start-interview-button:active {
+  transform: scale(0.98); /* Slight press effect */
 }

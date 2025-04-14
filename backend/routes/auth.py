@@ -15,6 +15,7 @@ class SignupModel(BaseModel):
     username: str
     email: EmailStr
     password: str
+    fullname: str
     confirm_password: str
 
 
@@ -27,6 +28,8 @@ class LoginModel(BaseModel):
 # ✅ User Signup Route
 @router.post("/signup/")
 def signup(user: SignupModel, db: Session = Depends(get_db)):
+    print("user.full_name:", user.fullname)  # Corrected attribute name
+
     # Check if passwords match
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
@@ -38,7 +41,8 @@ def signup(user: SignupModel, db: Session = Depends(get_db)):
 
     # Hash password and create new user
     new_user = User(
-        username=user.username,
+        username=user.email,
+        full_name=user.fullname,  # Corrected attribute name
         email=user.email,
         password_hash=hash_password(user.password),
     )

@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=D:\Clark\SPRING_2025\CAPSTONE\Project\AI_Interviewer\venv
+set VIRTUAL_ENV=D:\Clark\SPRING_2025\CAPSTONE\AI_Interviewer\venv
 
 if not defined PROMPT set PROMPT=$P$G
 

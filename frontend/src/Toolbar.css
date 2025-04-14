@@ -2,24 +2,49 @@
 
 /* Toolbar styling */
 .toolbar {
-    background-color: #ffffff; /* Green background */
-    color: rgb(112, 67, 217); /* White text */
-    padding: 15px 0;
-    height: 40px;
-    justify-content: center;
-    text-align: center;
-    font-size: 13px;
-    font-weight: bold;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;  
-    margin-bottom: 20px;
-  }
-  
-  body {
-    padding-top: 60px; /* To ensure the page content doesn't hide behind the toolbar */
-    margin-bottom: 20px;
-  }
-  
+  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Gradient background for the toolbar */
+  color: #ffffff; /* White text */
+  padding: 15px 0;
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+}
+
+.toolbar-title {
+  margin-left: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.toolbar-links {
+  display: flex;
+  gap: 1.5rem;
+  margin-right: 20px;
+}
+
+.toolbar-link {
+  margin: 0;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.toolbar-link:hover {
+  color: #ff416c; /* Highlight color on hover */
+}
+
+body {
+  padding-top: 60px; /* To ensure the page content doesn't hide behind the toolbar */
+  margin-bottom: 20px;
+}

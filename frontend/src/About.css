@@ -1,0 +1,66 @@
+/* About.css */
+.about-container {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #4a00e0, #8e2de2);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #ffffff;
+  }
+  
+  .toolbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(90deg, #4a00e0, #8e2de2);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+  
+  .toolbar-title {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+  }
+  
+  .toolbar-links {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .toolbar-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: color 0.3s ease;
+  }
+  
+  .toolbar-link:hover {
+    color: #ff416c;
+  }
+  
+  .about-content {
+    margin-top: 100px;
+    text-align: center;
+    max-width: 600px;
+  }
+  
+  .about-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .about-description {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
