@@ -145,21 +145,24 @@ const UserProfileUpdate = () => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("company_experience", JSON.stringify(companyExperience));
-    formData.append("skills", JSON.stringify(skills.map((skill) => skill.value)));
-    formData.append("preferred_role", preferredRole);
-    formData.append("education", JSON.stringify(education));
-    formData.append("certifications", JSON.stringify(certifications.map((cert) => cert.value)));
+    formData.append("company_experience", JSON.stringify(companyExperience)); // JSON string
+    formData.append("skills", JSON.stringify(skills.map((skill) => skill.value))); // JSON string
+    formData.append("preferred_role", preferredRole); // String
+    formData.append("education", JSON.stringify(education)); // JSON string
+    formData.append("certifications", JSON.stringify(certifications.map((cert) => cert.value))); // JSON string
     if (resume) {
-      formData.append("resume", resume);
+      formData.append("resume", resume); // File
     }
 
-    console.log("API URL:", "http://localhost:8000/profile/updateProfile/");
-    console.log("Form Data:", formData);
+    console.log("Form Data:", Object.fromEntries(formData.entries())); // Debugging
 
     try {
+      const token = localStorage.getItem("token"); // Retrieve the token from localStorage
       const response = await axios.put("http://localhost:8000/profile/updateProfile/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+        },
       });
       console.log("Profile updated successfully:", response.data);
     } catch (error) {

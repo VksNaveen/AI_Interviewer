@@ -109,7 +109,7 @@ const SelfIntroduction = () => {
 
   const handleNext = () => {
     if (isNextEnabled) {
-      navigate("/technical-round");
+      navigate("/mcq-round");
     }
   };
 

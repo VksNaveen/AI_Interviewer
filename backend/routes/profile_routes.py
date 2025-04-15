@@ -3,37 +3,37 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.models.profile import Profile
 from backend.models.user import User
-from backend.services.auth_service import verify_jwt_token, get_current_user
+from backend.services.auth_service import get_current_user
 from pydantic import BaseModel
 from typing import List, Optional
 import os
 import shutil
+import json
 
 router = APIRouter()
 
-UPLOAD_FOLDER = "uploads"
+UPLOAD_FOLDER = "uploads/resumes"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ✅ Define Token Model
-class TokenModel(BaseModel):
-    token: str
-
 # ✅ Define Profile Update Model
-class ProfileUpdateModel(BaseModel):
-    experience: Optional[int] = None
-    skills: Optional[List[str]] = None
-    preferred_role: Optional[str] = None
-    interest_area: Optional[str] = None
-    education: Optional[str] = None
-    degree: Optional[str] = None
-    certifications: Optional[str] = None
-    projects: Optional[str] = None
-    linkedin: Optional[str] = None
-    github: Optional[str] = None
-    expected_salary: Optional[int] = None
-    location_preference: Optional[str] = None
+class CompanyExperience(BaseModel):
+    company_name: str
+    years: str
 
-# ✅ GET Profile (For React, Using Token in Headers)
+class Education(BaseModel):
+    degree: str
+    institution: str
+    year_of_passing: str
+    grade_or_percentage: Optional[str]
+
+class UpdateProfileRequest(BaseModel):
+    company_experience: List[CompanyExperience]
+    skills: List[str]
+    preferred_role: str
+    education: List[Education]
+    certifications: List[str]
+
+# ✅ GET Profile
 @router.get("/", tags=["Profile Management"])
 def get_profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
@@ -51,10 +51,9 @@ def get_profile(current_user: User = Depends(get_current_user), db: Session = De
         "resume_file": profile.resume_file,
     }
 
-# ✅ POST Profile (For Postman Testing, Using JSON Token)
+# ✅ POST Profile (For Postman Testing)
 @router.post("/", tags=["Profile Management"])
-def get_profile_with_token(token_data: TokenModel, db: Session = Depends(get_db)):
-    token = token_data.token
+def get_profile_with_token(token: str, db: Session = Depends(get_db)):
     payload = verify_jwt_token(token)
 
     if payload is None:
@@ -70,35 +69,43 @@ def get_profile_with_token(token_data: TokenModel, db: Session = Depends(get_db)
 
     return profile
 
-# ✅ PUT Profile (Update Profile)
-@router.put("/", tags=["Profile Management"])
-def update_profile(
-    company_experience: list[dict] = Form(...),
-    skills: list[str] = Form(...),
+# ✅ PUT Profile (Explicit Update Profile Endpoint)
+@router.put("/updateProfile/", tags=["Profile Management"])
+async def update_profile_explicit(
+    company_experience: str = Form(...),
+    skills: str = Form(...),
     preferred_role: str = Form(...),
-    education: list[dict] = Form(...),
-    certifications: list[str] = Form(...),
-    resume: UploadFile = File(None),
+    education: str = Form(...),
+    certifications: str = Form(...),
+    resume: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    try:
+        # Parse JSON strings into Python objects
+        company_experience_data = json.loads(company_experience)
+        skills_data = json.loads(skills)
+        education_data = json.loads(education)
+        certifications_data = json.loads(certifications)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Invalid JSON input: {e}")
 
+    # Fetch or create the profile
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
     if not profile:
-        # Create a new profile if it doesn't exist
         profile = Profile(user_id=current_user.id)
         db.add(profile)
 
     # Update profile fields
-    profile.company_experience = company_experience
-    profile.skills = skills
+    profile.company_experience = company_experience_data
+    profile.skills = skills_data
     profile.preferred_role = preferred_role
-    profile.education = education
-    profile.certifications = certifications
+    profile.education = education_data
+    profile.certifications = certifications_data
 
     # Handle resume upload
     if resume:
-        resume_path = f"uploads/resumes/{resume.filename}"
+        resume_path = os.path.join(UPLOAD_FOLDER, resume.filename)
         with open(resume_path, "wb") as buffer:
             shutil.copyfileobj(resume.file, buffer)
         profile.resume_file = resume_path
@@ -106,46 +113,8 @@ def update_profile(
     db.commit()
     return {"message": "Profile updated successfully"}
 
-@router.put("/updateProfile/", tags=["Profile Management"])
-async def update_profile(
-    company_experience: list[dict] = Form(...),  # List of company experience
-    skills: list[str] = Form(...),  # List of skills
-    preferred_role: str = Form(...),  # Preferred role
-    education: list[dict] = Form(...),  # List of education details
-    certifications: list[str] = Form(...),  # List of certifications
-    resume: UploadFile = File(None),  # Resume file
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        # Fetch the profile for the current user
-        profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
-        if not profile:
-            # Create a new profile if it doesn't exist
-            profile = Profile(user_id=current_user.id)
-            db.add(profile)
-
-        # Update profile fields
-        profile.company_experience = company_experience
-        profile.skills = skills
-        profile.preferred_role = preferred_role
-        profile.education = education
-        profile.certifications = certifications
-
-        # Handle resume upload
-        if resume:
-            resume_path = f"uploads/resumes/{resume.filename}"
-            with open(resume_path, "wb") as buffer:
-                shutil.copyfileobj(resume.file, buffer)
-            profile.resume_file = resume_path
-
-        # Commit changes to the database
-        db.commit()
-        return {"message": "Profile updated successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/", tags=["Profile Management"])
+# ✅ POST Profile (Create Profile)
+@router.post("/createProfile/", tags=["Profile Management"])
 def create_profile(
     company_experience: list[dict] = Form(...),
     skills: list[str] = Form(...),
@@ -161,7 +130,6 @@ def create_profile(
     if profile:
         raise HTTPException(status_code=400, detail="Profile already exists")
 
-    # Create a new profile
     profile = Profile(
         user_id=current_user.id,
         company_experience=company_experience,
@@ -171,9 +139,8 @@ def create_profile(
         certifications=certifications,
     )
 
-    # Handle resume upload
     if resume:
-        resume_path = f"uploads/resumes/{resume.filename}"
+        resume_path = f"{UPLOAD_FOLDER}/{resume.filename}"
         with open(resume_path, "wb") as buffer:
             shutil.copyfileobj(resume.file, buffer)
         profile.resume_file = resume_path

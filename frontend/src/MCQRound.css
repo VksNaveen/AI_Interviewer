@@ -1,0 +1,159 @@
+/* General Layout */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom, #f0f8ff, #e6e6fa);
+}
+
+/* Toolbar */
+#mcq-toolbar {
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+#mcq-logo {
+  font-size: 20px;
+  font-weight: bold;
+  background: white;
+  color: #6a11cb;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+#mcq-toolbar-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+#mcq-toolbar-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.mcq-toolbar-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background: white;
+  color: #6a11cb;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.mcq-toolbar-button:hover {
+  background: #e6e6fa;
+}
+
+/* Main Content */
+#mcq-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+#mcq-main-content {
+  width: 80%;
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-top: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 150px);
+}
+
+#mcq-heading {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#mcq-timer {
+  font-size: 18px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#mcq-progress {
+  font-size: 16px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: black;
+}
+
+/* Questions and Options */
+#mcq-questions {
+  margin-top: 20px;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.mcq-question-block {
+  margin-bottom: 20px;
+}
+
+.mcq-question-text {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: black;
+}
+
+.mcq-options {
+  list-style-type: none;
+  padding: 0;
+}
+
+.mcq-option {
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #f9f9f9;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.mcq-option:hover {
+  background: #dcdcdc;
+  transform: scale(1.02);
+}
+
+.mcq-selected {
+  background: #6a11cb;
+  color: white;
+}
+
+/* Navigation Buttons */
+#mcq-navigation {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.mcq-next-button,
+.mcq-submit-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.mcq-next-button:hover,
+.mcq-submit-button:hover {
+  background: linear-gradient(45deg, #2575fc, #6a11cb);
+}

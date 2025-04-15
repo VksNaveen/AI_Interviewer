@@ -9,6 +9,7 @@ from gtts import gTTS
 from langdetect import detect, DetectorFactory
 from gtts.lang import tts_langs
 import os
+import ast
 import platform
 
 # Fix deterministic output for langdetect
@@ -203,3 +204,71 @@ def stop_technical_round():
         return {"closing_prompt": speech_file}
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to stop technical round.")
+    
+
+@router.get("/test-mcq")
+def test_mcq():
+    return {"message": "MCQ route is working"}
+
+
+# ✅ POST /startMCQRound
+@router.post("/startMCQRound/", tags=["Interview"])
+async def start_mcq_round():
+    try:
+        print("Starting MCQ Round...")  # Debugging
+        prompt = (
+            "Generate 10 technical multiple-choice questions. Each question should include "
+            "a question text and exactly 4 options. Format the result as a list of dictionaries: "
+            "[{\"question\": ..., \"options\": [...]}, ...]"
+        )
+
+        print("Sending prompt to LLaMA...")
+        llama_response = llm.invoke(prompt)
+        print("Raw LLaMA response:", llama_response)
+
+        # Get the response as a string
+        questions = getattr(llama_response, "content", str(llama_response))
+        print("Returning questions as string:", questions)
+
+        # Wrap the string in a JSON object
+        return {"questions": questions}
+
+    except Exception as e:
+        print("Error in start_mcq_round:", e)
+        raise HTTPException(status_code=500, detail=f"Error generating questions: {e}")
+
+
+# ✅ Models
+class MCQResponse(BaseModel):
+    id: int
+    question: str
+    options: List[str]
+    selected_answer: str
+
+class SubmitMCQPayload(BaseModel):
+    responses: List[MCQResponse]
+
+
+# ✅ POST /submitMCQ
+@router.post("/submitMCQ/")
+async def submit_mcq(payload: SubmitMCQPayload):
+    try:
+        prompt = (
+            "Here are 10 MCQs and the user's answers. Please review them and return a feedback summary "
+            "including correct/incorrect flags and suggestions if possible.\n\nQuestions and Answers:\n"
+        )
+
+        for response in payload.responses:
+            prompt += (
+                f"Question: {response.question}\n"
+                f"Options: {', '.join(response.options)}\n"
+                f"User's Answer: {response.selected_answer}\n\n"
+            )
+
+        llama_response = llm.invoke(prompt)
+        review = getattr(llama_response, "content", str(llama_response))
+
+        return {"review": review}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing responses: {e}")

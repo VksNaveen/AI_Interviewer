@@ -1,152 +1,154 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../../src/SelfIntroduction.css"; // Reuse the same CSS file
+import "../../src/MCQRound.css"; // Import the updated CSS file
 
 const MCQRound = () => {
   const [questions, setQuestions] = useState([]); // Store the list of MCQs
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); // Track the current question
+  const [currentSlide, setCurrentSlide] = useState(1); // Track the current slide (1 or 2)
   const [selectedAnswers, setSelectedAnswers] = useState({}); // Store selected answers
-  const [timer, setTimer] = useState(10); // Timer for each question
-  const navigate = useNavigate();
+  const [timer, setTimer] = useState(1200); // 20-minute countdown timer
 
   useEffect(() => {
-    // Fetch MCQs from the backend or use a static list
+    // Fetch MCQs from the backend on component mount
     fetchQuestions();
+
+    // Start the 20-minute timer
+    const countdown = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          handleSubmit(); // Auto-submit when the timer reaches 0
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown); // Cleanup the timer
   }, []);
-
-  useEffect(() => {
-    // Start a 10-second timer for each question
-    if (currentQuestionIndex < questions.length) {
-      const countdown = setInterval(() => {
-        setTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdown);
-            handleNext(); // Auto-submit the current question
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(countdown); // Cleanup the timer
-    }
-  }, [currentQuestionIndex, questions]);
 
   const fetchQuestions = async () => {
     try {
-      // Replace with your backend API call
-      const response = await fetch("http://localhost:8000/api/getMCQs");
+      const response = await fetch("http://localhost:8000/api/startMCQRound/", {
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setQuestions(data.questions || []); // Assuming the API returns a `questions` array
+
+      // Extract and parse the questions string
+      const rawQuestions = data.questions;
+      const jsonStartIndex = rawQuestions.indexOf("["); // Find the start of the JSON array
+      const jsonEndIndex = rawQuestions.lastIndexOf("]") + 1; // Find the end of the JSON array
+      const questionsString = rawQuestions.slice(jsonStartIndex, jsonEndIndex); // Extract the JSON array as a string
+      const parsedQuestions = JSON.parse(questionsString); // Parse the JSON string
+
+      // Add unique IDs to each question
+      const questionsWithIds = parsedQuestions.map((question, index) => ({
+        ...question,
+        id: index + 1,
+      }));
+
+      setQuestions(questionsWithIds); // Update the questions state
     } catch (error) {
       console.error("Error fetching MCQs:", error);
-      setQuestions([
-        // Static fallback questions
-        {
-          id: 1,
-          question: "What is the capital of France?",
-          options: ["Paris", "London", "Berlin", "Madrid"],
-        },
-        {
-          id: 2,
-          question: "Which programming language is used for web development?",
-          options: ["Python", "JavaScript", "C++", "Java"],
-        },
-        // Add more static questions as needed
-      ]);
     }
   };
 
-  const handleAnswerSelect = (option) => {
+  const handleAnswerSelect = (questionId, option) => {
     setSelectedAnswers({
       ...selectedAnswers,
-      [questions[currentQuestionIndex].id]: option,
+      [questionId]: option,
     });
   };
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setTimer(10); // Reset the timer for the next question
-    } else {
-      handleSubmit(); // Submit answers after the last question
-    }
+  const handleNextSlide = () => {
+    setCurrentSlide(2); // Move to Slide 2
   };
 
   const handleSubmit = async () => {
-    try {
-      // Submit the answers to the backend
-      const response = await fetch("http://localhost:8000/api/submitMCQs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ answers: selectedAnswers }),
-      });
-      const result = await response.json();
-      console.log("Submission result:", result);
-
-      // Navigate to the next phase or show a success message
-      navigate("/results"); // Replace with the actual next route
-    } catch (error) {
-      console.error("Error submitting answers:", error);
-    }
+    console.log("Submitting answers:", selectedAnswers);
+    // Add submission logic here
   };
 
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+  };
+
+  const getTimerColor = () => {
+    if (timer > 600) return "green"; // More than 10 minutes
+    if (timer > 300) return "orange"; // Between 10 and 5 minutes
+    return "red"; // Less than 5 minutes
+  };
+
+  const answeredCount = Object.keys(selectedAnswers).length;
+
   if (questions.length === 0) {
-    return <div>Loading questions...</div>;
+    return <div id="mcq-loading">Loading questions...</div>;
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const slideQuestions =
+    currentSlide === 1 ? questions.slice(0, 5) : questions.slice(5, 10);
 
   return (
-    <div className="dashboard-container">
-      <header className="toolbar">
-        <div className="toolbar-logo">
-          <img src="/AI_INT.png" alt="Logo" className="logo" />
-        </div>
-        <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
-        <div className="toolbar-links">
-          <button className="toolbar-link" onClick={() => navigate("/dashboard")}>
+    <div id="mcq-container">
+      {/* Toolbar */}
+      <div id="mcq-toolbar">
+        <div id="mcq-logo">AI</div>
+        <h1 id="mcq-toolbar-title">AI INTERVIEW PREPARATION COACH</h1>
+        <div id="mcq-toolbar-buttons">
+          <button className="mcq-toolbar-button" onClick={() => console.log("Home clicked")}>
             Home
           </button>
-          <button className="toolbar-link" onClick={() => navigate("/profile-update")}>
+          <button className="mcq-toolbar-button" onClick={() => console.log("Profile clicked")}>
             Profile
           </button>
-          <button className="toolbar-link" onClick={() => navigate("/")}>
+          <button className="mcq-toolbar-button" onClick={() => console.log("Logout clicked")}>
             Logout
           </button>
         </div>
-      </header>
+      </div>
 
-      <main className="main-content">
-        <h1 className="page-heading">MCQ Round</h1>
+      {/* Main Content */}
+      <main id="mcq-main-content">
+        <h1 id="mcq-heading">MCQ Round</h1>
+        <p id="mcq-timer" style={{ color: getTimerColor() }}>
+          Time remaining: {formatTime(timer)}
+        </p>
+        <p id="mcq-progress">You’ve answered {answeredCount}/10 questions</p>
 
-        <div className="mcq-container">
-          <p className="question-text">{currentQuestion.question}</p>
-          <div className="options-container">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                className={`option-button ${
-                  selectedAnswers[currentQuestion.id] === option ? "selected" : ""
-                }`}
-                onClick={() => handleAnswerSelect(option)}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-          <p className="timer">Time remaining: {timer}s</p>
+        <div id="mcq-questions">
+          {slideQuestions.map((question) => (
+            <div key={question.id} className="mcq-question-block">
+              <p className="mcq-question-text">
+                {question.id}. {question.question}
+              </p>
+              <ul className="mcq-options">
+                {question.options.map((option, index) => (
+                  <li
+                    key={index}
+                    className={`mcq-option ${
+                      selectedAnswers[question.id] === option ? "mcq-selected" : ""
+                    }`}
+                    onClick={() => handleAnswerSelect(question.id, option)}
+                  >
+                    {option}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="navigation-buttons">
-          {currentQuestionIndex < questions.length - 1 && (
-            <button className="next-button gradient-button" onClick={handleNext}>
+        <div id="mcq-navigation">
+          {currentSlide === 1 && (
+            <button className="mcq-next-button" onClick={handleNextSlide}>
               Next
             </button>
           )}
-          {currentQuestionIndex === questions.length - 1 && (
-            <button className="submit-button gradient-button" onClick={handleSubmit}>
+          {currentSlide === 2 && (
+            <button className="mcq-submit-button" onClick={handleSubmit}>
               Submit
             </button>
           )}
