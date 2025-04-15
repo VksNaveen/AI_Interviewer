@@ -15,6 +15,7 @@ html, body {
 
 /* Center the Signup Container */
 .signup-container {
+  background: linear-gradient(179deg, #6a11cb, #2575fc);
   display: flex;
   flex-direction: column;
   justify-content: center;

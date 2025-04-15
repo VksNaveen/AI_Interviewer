@@ -172,20 +172,6 @@ const UserProfileUpdate = () => {
 
   return (
     <div className="profile-update-page">
-      <header className="toolbar">
-        <div className="toolbar-logo">
-          <img src="/AI_INT.png" alt="Logo" className="logo" />
-        </div>
-        <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
-        <div className="toolbar-links">
-          <button className="toolbar-link" onClick={() => window.location.href = "/dashboard"}>
-            Home
-          </button>
-          <button className="toolbar-link" onClick={() => window.location.href = "/"}>
-            Logout
-          </button>
-        </div>
-      </header>
 
       <div className="profile-update-container">
         <h2 className="page-title">Update Profile</h2>
@@ -224,7 +210,7 @@ const UserProfileUpdate = () => {
                 </button>
               </div>
             ))}
-            <button type="button" className="add-button gradient-button" onClick={handleAddCompanyExperience}>
+            <button type="button" className="add-button" onClick={handleAddCompanyExperience}>
               Add Experience
             </button>
           </div>
@@ -310,7 +296,7 @@ const UserProfileUpdate = () => {
                 </button>
               </div>
             ))}
-            <button type="button" className="add-button gradient-button" onClick={handleAddEducation}>
+            <button type="button" className="add-button" onClick={handleAddEducation}>
               Add Education
             </button>
           </div>

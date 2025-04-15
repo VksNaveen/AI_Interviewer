@@ -35,7 +35,7 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="main-content">
-        <h1 className="page-heading">AI INTERVIEW PREPARATION COACH</h1>
+        {/* <h1 className="page-heading">AI INTERVIEW PREPARATION COACH</h1> */}
         <div className="tiles-container">
           <div className="tile">Total Interviews: {mockInterviews.length}</div>
           <div className="tile">

@@ -6,6 +6,23 @@ html, body {
   overflow: hidden; /* Prevent body from scrolling */
 }
 
+.add-button{
+  background: linear-gradient(90deg, #007c00, #015e28); /* Gradient purple */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.add-button:hover {
+  background: linear-gradient(90deg, #015e28, #007c00); /* Reverse gradient on hover */
+  transform: scale(1.05); /* Slight zoom effect */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  
+}
+
 .profile-update-dashboard-container {
   display: flex;
   flex-direction: column;
@@ -18,85 +35,13 @@ html, body {
 
 /* General Page Styling */
 .profile-update-page {
-  background-color: #f9f9f9;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start; /* Align content to the top */
-  overflow-y: auto; /* Enable vertical scrolling */
-}
-
-/* Navigation Bar */
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Gradient color */
-  padding: 10px 20px;
-  color: white;
-  width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.toolbar-logo .logo {
-  width: 50px;
-  height: 50px;
-}
-
-.toolbar-logo img {
-  height: 40px;
-}
-
-.toolbar-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: white;
-  text-align: center;
-  flex: 1;
-}
-
-.toolbar-links {
-  display: flex;
-  gap: 1rem;
-}
-
-.toolbar-link {
-  padding: 12px 24px;
-  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Purple gradient */
-  color: white;
-  border: none;
-  border-radius: 50px; /* Rounded corners */
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
-}
-
-.toolbar-links button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 14px;
-  margin-left: 15px;
-  cursor: pointer;
-}
-
-.toolbar-links button:hover {
-  text-decoration: underline;
-}
-
-.toolbar-link:hover {
-  background: linear-gradient(90deg, #8e2de2, #4a00e0); /* Reverse gradient on hover */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Stronger shadow on hover */
-}
-
-.toolbar-link:active {
-  transform: scale(0.98); /* Slight press effect */
+  justify-content: center; /* Horizontally center the container */
+  align-items: center; /* Vertically center the container */
+  height: 100vh; /* Full viewport height */
+  background-color: #f9f9f9; /* Light background color */
+  margin: 0; /* Remove any default margin */
+  padding: 40px; /* Increased padding for better spacing */
 }
 
 /* Profile Update Main Content */
@@ -113,20 +58,20 @@ html, body {
 /* Form Container */
 .profile-update-container {
   background: white;
-  padding: 30px;
+  padding: 50px 100px; /* Increased padding for better spacing */
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  width: 600px;
-  margin: 20px 0;
+  width: 800px; /* Increased width to make the container bigger */
+  max-height: 90vh; /* Adjusted max-height for better vertical space */
   overflow-y: auto;
-  max-height: 80vh;
+  margin: 100px auto 20px; /* Centered the container */
 }
 
 .page-title {
   text-align: center;
   font-size: 24px;
   margin-bottom: 20px;
-  color: black;
+  color:#8e2de2;
 }
 
 .profile-update-title {

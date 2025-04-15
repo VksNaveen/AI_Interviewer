@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../Signup.css";
+import "../../src/Signup.css"; // Import the updated CSS file
 import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {

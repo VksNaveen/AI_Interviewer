@@ -66,8 +66,33 @@ const MCQRound = () => {
   };
 
   const handleSubmit = async () => {
-    console.log("Submitting answers:", selectedAnswers);
-    // Add submission logic here
+    try {
+      // Prepare the payload with questions and selected answers
+      const payload = {
+        questions: questions,
+        selectedAnswers: selectedAnswers,
+      };
+
+      // Call the stopMCQRound API
+      const response = await fetch("http://localhost:8000/api/submitMCQ/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log("MCQ round submitted successfully!");
+
+      // Navigate to the technical round page
+      navigate("/technical-round");
+    } catch (error) {
+      console.error("Error submitting MCQ round:", error);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -93,24 +118,6 @@ const MCQRound = () => {
 
   return (
     <div id="mcq-container">
-      {/* Toolbar */}
-      <div id="mcq-toolbar">
-        <div id="mcq-logo">AI</div>
-        <h1 id="mcq-toolbar-title">AI INTERVIEW PREPARATION COACH</h1>
-        <div id="mcq-toolbar-buttons">
-          <button className="mcq-toolbar-button" onClick={() => console.log("Home clicked")}>
-            Home
-          </button>
-          <button className="mcq-toolbar-button" onClick={() => console.log("Profile clicked")}>
-            Profile
-          </button>
-          <button className="mcq-toolbar-button" onClick={() => console.log("Logout clicked")}>
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <main id="mcq-main-content">
         <h1 id="mcq-heading">MCQ Round</h1>
         <p id="mcq-timer" style={{ color: getTimerColor() }}>

@@ -6,52 +6,13 @@ body {
   background: linear-gradient(to bottom, #f0f8ff, #e6e6fa);
 }
 
-/* Toolbar */
-#mcq-toolbar {
-  background: linear-gradient(45deg, #6a11cb, #2575fc);
-  color: white;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
 #mcq-logo {
   font-size: 20px;
   font-weight: bold;
   background: white;
-  color: #6a11cb;
+  color: #4a90e2; /* Match the gradient color */
   padding: 5px 10px;
   border-radius: 5px;
-}
-
-#mcq-toolbar-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0;
-}
-
-#mcq-toolbar-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.mcq-toolbar-button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  background: white;
-  color: #6a11cb;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.mcq-toolbar-button:hover {
-  background: #e6e6fa;
 }
 
 /* Main Content */
@@ -69,11 +30,30 @@ body {
   padding: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-top: 20px;
-  overflow-y: auto;
-  max-height: calc(100vh - 150px);
+  overflow-y: auto; /* Enable vertical scrolling */
+  max-height: calc(100vh - 150px); /* Ensure it fits within the viewport */
+}
+
+/* Scrollbar for #mcq-main-content */
+#mcq-main-content::-webkit-scrollbar {
+  width: 6px; /* Slim scrollbar */
+}
+
+#mcq-main-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #6a11cb, #4a00e0); /* Gradient purple scrollbar thumb */
+  border-radius: 4px; /* Rounded corners */
+}
+
+#mcq-main-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #4a00e0, #6a11cb); /* Reverse gradient on hover */
+}
+
+#mcq-main-content::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Light background for the scrollbar track */
 }
 
 #mcq-heading {
+  color: #6a11cb;
   font-size: 28px;
   font-weight: bold;
   text-align: center;
@@ -100,6 +80,25 @@ body {
   max-height: 400px;
 }
 
+/* Scrollbar for #mcq-questions */
+#mcq-questions::-webkit-scrollbar {
+  width: 6px; /* Slim scrollbar */
+  height: 6px; /* Slim scrollbar for horizontal scrolling */
+}
+
+#mcq-questions::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #6a11cb, #4a00e0); /* Gradient purple scrollbar thumb */
+  border-radius: 4px; /* Rounded corners */
+}
+
+#mcq-questions::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #4a00e0, #6a11cb); /* Reverse gradient on hover */
+}
+
+#mcq-questions::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Light background for the scrollbar track */
+}
+
 .mcq-question-block {
   margin-bottom: 20px;
 }
@@ -108,6 +107,7 @@ body {
   font-size: 18px;
   margin-bottom: 10px;
   color: black;
+  font-weight: bold;
 }
 
 .mcq-options {
@@ -116,6 +116,7 @@ body {
 }
 
 .mcq-option {
+  color: black;
   padding: 10px;
   margin-bottom: 10px;
   background: #f9f9f9;
@@ -125,8 +126,9 @@ body {
 }
 
 .mcq-option:hover {
+  color: black;
   background: #dcdcdc;
-  transform: scale(1.02);
+  transform: scale(1.01);
 }
 
 .mcq-selected {

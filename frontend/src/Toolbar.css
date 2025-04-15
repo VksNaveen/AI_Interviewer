@@ -1,50 +1,98 @@
-/* src/components/Toolbar.css */
-
-/* Toolbar styling */
+/* Toolbar */
 .toolbar {
-  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Gradient background for the toolbar */
-  color: #ffffff; /* White text */
-  padding: 15px 0;
-  height: 60px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 16px;
-  font-weight: bold;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
+  height: 80px; /* Height of the toolbar */
+  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Purple gradient */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-logo .logo {
+  width: 80px;
+  height: 80px;
 }
 
 .toolbar-title {
-  margin-left: 20px;
   font-size: 1.5rem;
   font-weight: bold;
+  color: white;
+  text-align: center;
+  flex: 1;
 }
 
 .toolbar-links {
   display: flex;
-  gap: 1.5rem;
-  margin-right: 20px;
+  gap: 1rem;
 }
 
 .toolbar-link {
   margin: 0;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: color 0.3s ease;
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #4a00e0, #8e2de2); /* Purple gradient */
+  color: white;
+  border: none;
+  border-radius: 50px; /* Rounded corners */
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
 }
 
 .toolbar-link:hover {
-  color: #ff416c; /* Highlight color on hover */
+  background: linear-gradient(90deg, #8e2de2, #4a00e0); /* Reverse gradient on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Stronger shadow on hover */
 }
 
-body {
-  padding-top: 60px; /* To ensure the page content doesn't hide behind the toolbar */
-  margin-bottom: 20px;
+.toolbar-link:active {
+  transform: scale(0.98); /* Slight press effect */
 }
+
+.top-nav {
+  background-color: #6a0dad;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-bar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.nav-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 auto; /* Center the title */
+  text-align: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-button {
+  background-color: white;
+  color: #6a0dad;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.nav-button:hover {
+  background-color: #5a0c9d;
+  color: white;
+}
+
+
