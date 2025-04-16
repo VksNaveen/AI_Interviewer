@@ -11,7 +11,29 @@ from gtts.lang import tts_langs
 import os
 import ast
 import platform
+import json
+import pinecone
+from sentence_transformers import SentenceTransformer
+from llama_cpp import Llama
+import random
+from pinecone import Pinecone, ServerlessSpec
+from fastapi import Query
 
+# Initialize Pinecone with your API key
+pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+
+# Create or connect to index
+index_name = 'mockinterviewvector'
+if index_name not in pc.list_indexes().names():
+    pc.create_index(
+        name=index_name,
+        dimension=384,  # or 768 depending on your embedding model
+        metric="cosine",
+        spec=ServerlessSpec(cloud="aws", region="us-west-2")
+    )
+
+# Connect to the index
+index = pc.Index(index_name)
 # Fix deterministic output for langdetect
 DetectorFactory.seed = 0
 
@@ -19,6 +41,8 @@ DetectorFactory.seed = 0
 load_dotenv()
 
 router = APIRouter()
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Setup Groq Client
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -56,7 +80,6 @@ def generate_speech_from_text(text: str, file_name: str = "output_speech.mp3"):
     except Exception as e:
         print(f"❌ Error in generate_speech_from_text(): {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate speech: {str(e)}")
-
 
 # 1. Speech-to-Text
 @router.post("/speechToText/")
@@ -230,7 +253,6 @@ def stop_technical_round():
 def test_mcq():
     return {"message": "MCQ route is working"}
 
-
 # ✅ POST /startMCQRound
 @router.post("/startMCQRound/", tags=["Interview"])
 async def start_mcq_round():
@@ -257,7 +279,6 @@ async def start_mcq_round():
         print("Error in start_mcq_round:", e)
         raise HTTPException(status_code=500, detail=f"Error generating questions: {e}")
 
-
 # ✅ Models
 class MCQResponse(BaseModel):
     id: int
@@ -269,7 +290,6 @@ class MCQResponse(BaseModel):
 class SubmitMCQPayload(BaseModel):
     question: str
     answer: str
-
 
 # ✅ POST /submitMCQ
 @router.post("/submitMCQ/")
@@ -388,3 +408,191 @@ def get_self_intro_feedback_from_llama(transcript: str):
     except Exception as e:
         print(f"❌ Error in get_self_intro_feedback_from_llama(): {e}")
         return f"Error: {e}"
+
+class RoleRequest(BaseModel):
+    role: str
+
+@router.post("/generateQuestionsForRole/") #Rag Implemented Technical Questions
+async def generate_questions_for_role(request: RoleRequest):
+    print(f"🔍 Function called for role: {request.role}")  # Debugging line
+    try:
+        # Step 1: Embed role and query Pinecone
+        print(f"🔍 Retrieving relevant data for role: {request.role}")
+        query_embedding = embedding_model.encode(request.role).tolist()
+        results = index.query(vector=query_embedding, top_k=5, include_metadata=True)
+        print(f"🔍 Pinecone query result: {results}")
+
+        # Step 2: Collect questions from metadata
+        retrieved_context = []
+        for match in results["matches"]:
+            question = match["metadata"].get("question")
+            if question:
+                retrieved_context.append(question)
+
+        if not retrieved_context:
+            raise HTTPException(status_code=404, detail="No relevant data found for the given role.")
+
+        # Step 3: Format context and build prompt
+        print(f"📝 Generating questions using LLaMA for role: {request.role}")
+        context_str = "\n".join(f"- {q}" for q in retrieved_context)
+        prompt = (
+            f"You are an AI assistant tasked with generating 5 technical questions for the role of '{request.role}'. "
+        )
+
+        # Step 4: Generate response
+        llama_response = llm.invoke(prompt)  # Use invoke for Llama
+        print(f"📝 Llama response: {llama_response}")
+
+        # Step 5: Extract generated text
+        if hasattr(llama_response, "content"):
+            questions = llama_response.content.strip()
+        else:
+            questions = str(llama_response).strip()
+
+        print(f"✅ Generated questions: {questions}")
+        return {"questions": questions}
+
+    except Exception as e:
+        print(f"❌ Error in /generateQuestionsForRole/: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate questions for role: {str(e)}")
+
+@router.post("/mcqrag/") #Rag Implemented MCQs
+async def generate_questions_for_role(request: RoleRequest):
+    print(f"🔍 Function called for role: {request.role}")  # Debugging line
+    try:
+        # Step 1: Embed role and query Pinecone
+        print(f"🔍 Retrieving relevant data for role: {request.role}")
+        query_embedding = embedding_model.encode(request.role).tolist()
+        results = index.query(vector=query_embedding, top_k=5, include_metadata=True)
+        print(f"🔍 Pinecone query result: {results}")
+
+        # Step 2: Collect questions from metadata
+        retrieved_context = []
+        for match in results["matches"]:
+            question = match["metadata"].get("question")
+            if question:
+                retrieved_context.append(question)
+
+        if not retrieved_context:
+            raise HTTPException(status_code=404, detail="No relevant data found for the given role.")
+
+        # Step 3: Format context and build prompt
+        print(f"📝 Generating questions using LLaMA for role: {request.role}")
+        context_str = "\n".join(f"- {q}" for q in retrieved_context)
+        prompt = (
+            f"You are an AI assistant tasked with generating 10 technical questions for the role of '{request.role}'. "
+            f"Use the following context to guide your question generation:\n\n"
+            f"{context_str}\n\n"
+            f"Format the result as a list of dictionaries like this:\n"
+            f"[{{'question': '...', 'options': ['A', 'B', 'C', 'D']}}, ...]"
+        )
+
+        # Step 4: Generate response
+        llama_response = llm.invoke(prompt)  # Use invoke for Llama
+        print(f"📝 Llama response: {llama_response}")
+
+        # Step 5: Extract generated text
+        if hasattr(llama_response, "content"):
+            questions = llama_response.content.strip()
+        else:
+            questions = str(llama_response).strip()
+
+        print(f"✅ Generated questions: {questions}")
+        return {"questions": questions}
+
+    except Exception as e:
+        print(f"❌ Error in /generateQuestionsForRole/: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate questions for role: {str(e)}")
+
+# Request body model for answers
+class UserAnswer(BaseModel):
+    question: str
+    answer: str
+
+class MCQScoreResponse(BaseModel):
+    total_questions: int
+    correct_answers: int
+    score_percentage: float
+
+@router.post("/mcqScores/")
+async def mcq_scores(user_answers: List[UserAnswer], role: str):
+    print(f"🔍 Scoring user answers for role: {role}")  # Debugging line
+    try:
+        # Debugging check if user_answers is received correctly
+        print(f"Received user_answers: {user_answers}")
+
+        # Placeholder logic to simulate scoring
+        total_questions = len(user_answers)
+        correct_answers = 0  # Logic for checking answers goes here
+        score_percentage = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
+
+        response = MCQScoreResponse(
+            total_questions=total_questions,
+            correct_answers=correct_answers,
+            score_percentage=score_percentage
+        )
+
+        return response
+
+    except Exception as e:
+        print(f"❌ Error in /mcqScores/: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to score answers for role: {str(e)}")
+class FeedbackRequest(BaseModel):
+    question: str
+    user_answer: str
+
+@router.post("/generateFeedbackForAnswer/") #Rag Implemented Feedback
+async def generate_feedback_for_answer(request: FeedbackRequest):
+    try:
+        print(f"🎤 Received answer for feedback: {request.user_answer}")
+
+        # Step 1: Embed the user's answer
+        user_embedding = embedding_model.encode(request.user_answer).tolist()
+        
+        # Step 2: Query Pinecone for similar expert answers
+        results = index.query(vector=user_embedding, top_k=5, include_metadata=True)
+        print(f"🔍 Pinecone results: {results}")
+        
+        # Step 3: Extract ideal answers
+        retrieved_context = "\n".join(
+            f"- {match['metadata']['answer']}" 
+            for match in results["matches"] 
+            if "answer" in match["metadata"]
+        )
+
+        if not retrieved_context:
+            raise HTTPException(status_code=404, detail="No relevant feedback data found.")
+
+        # Step 4: Build prompt
+        prompt = f"""
+        You are an AI interview coach.
+
+        The candidate was asked: "{request.question}"
+
+        Candidate's response:
+        "{request.user_answer}"
+
+        Here are similar expert answers:
+        {retrieved_context}
+
+        Please provide clear, constructive feedback comparing the candidate’s response to the expert responses. 
+        Mention:
+        - How well the answer aligns with best practices
+        - What is good about the response
+        - What can be improved
+        Be concise and actionable.
+        Keep it second person perspective.
+        """
+
+        # Step 5: Generate feedback using LLaMA
+        llama_response = llm.invoke(prompt)
+        feedback = llama_response.content if hasattr(llama_response, "content") else str(llama_response)
+
+        print(f"✅ Feedback: {feedback}")
+        return {"feedback": feedback}
+
+    except Exception as e:
+        print(f"❌ Error generating feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating feedback: {str(e)}")
+
+
