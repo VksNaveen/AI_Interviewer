@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 from langchain_groq import ChatGroq
-from typing import List
+from typing import List, Dict
 from pydantic import BaseModel
 from gtts import gTTS
 from langdetect import detect, DetectorFactory
@@ -112,16 +112,36 @@ async def start_self_introduction():
         raise HTTPException(status_code=500, detail="Failed to generate AI voice prompt.")
 
 # 5. Stop Self Introduction
+class StopSelfIntroductionRequest(BaseModel):
+    transcription: str
+
 @router.post("/stopSelfIntroduction/")
-def stop_self_intro():
+async def stop_self_introduction(request: StopSelfIntroductionRequest):
+    """
+    Stop the self-introduction and evaluate the user's transcript.
+
+    Args:
+        request (StopSelfIntroductionRequest): The transcription of the user's self-introduction.
+
+    Returns:
+        Dict: A dictionary containing evaluation scores and feedback.
+    """
     try:
-        closing_prompt = "Your self-introduction is done now. You can click on Next to start your technical round."
-        speech_file = generate_speech_from_text(closing_prompt, "intro_stop.wav")
+        # Get the transcription from the request
+        transcription = request.transcription
+
+        # Call the helper function to evaluate the transcript
+        feedback = get_self_intro_feedback_from_llama(transcription)
+
+        # Generate the closing prompt audio
+        closing_prompt = "Your self-introduction is complete. Please proceed to the next round."
+        speech_file = generate_speech_from_text(closing_prompt, "self_intro_stop.mp3")
+        print("feedback: ", feedback)
         return {"closing_prompt": speech_file}
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to generate closing prompt.")
-
-
+        print(f"❌ Error in /stopSelfIntroduction/: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to stop self-introduction: {e}")
 
 # 6. Start Technical Round
 @router.post("/startTechnicalRound/")
@@ -200,8 +220,8 @@ def stop_technical_round():
     try:
         closing_prompt = "Your technical round is done now. Please click on the Next button to move forward."
         speech_file = generate_speech_from_text(closing_prompt, "technical_stop.mp3")
-
-        return {"closing_prompt": speech_file}
+        feedback = get_technical_feedback_from_llama(prev_qa_list)  # Call the function to get feedback
+        return {"closing_prompt": speech_file,"feedback": feedback}
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to stop technical round.")
     
@@ -245,30 +265,126 @@ class MCQResponse(BaseModel):
     options: List[str]
     selected_answer: str
 
+# ✅ Updated Model
 class SubmitMCQPayload(BaseModel):
-    responses: List[MCQResponse]
+    question: str
+    answer: str
 
 
 # ✅ POST /submitMCQ
 @router.post("/submitMCQ/")
-async def submit_mcq(payload: SubmitMCQPayload):
+async def submit_mcq(payload: List[SubmitMCQPayload]):
     try:
         prompt = (
-            "Here are 10 MCQs and the user's answers. Please review them and return a feedback summary "
-            "including correct/incorrect flags and suggestions if possible.\n\nQuestions and Answers:\n"
+            "Task: Review the following 10 MCQ answers submitted by a user. Based on correctness:\n"
+            "1. Calculate and return the score (out of 10).\n"
+            "2. Give one sentence (in just 5 words) of feedback summarizing the user’s performance — mention what they’re good at or what to improve.\n"
+            "Format the response as:\n"
+            "'score: 4, feedback: feedback in 5 words'\n\n"
         )
 
-        for response in payload.responses:
+        for response in payload:
             prompt += (
                 f"Question: {response.question}\n"
-                f"Options: {', '.join(response.options)}\n"
-                f"User's Answer: {response.selected_answer}\n\n"
+                f"User's Answer: {response.answer}\n\n"
             )
 
-        llama_response = llm.invoke(prompt)
-        review = getattr(llama_response, "content", str(llama_response))
+        print("📜 Final Prompt for LLaMA:", prompt)
+        print("Sending prompt to LLaMA for review...")
 
-        return {"review": review}
+        llama_response = llm.invoke(prompt)
+
+        # Extract the content from the response
+        if hasattr(llama_response, "content"):
+            review = llama_response.content
+        else:
+            review = str(llama_response)
+
+        print("✅ Review from LLaMA:", review)
+        return review  # Return the raw string response
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error analyzing responses: {e}")
+        print(f"❌ Error in submitMCQ: {e}")
+        return f"Error: {e}"
+
+def get_technical_feedback_from_llama(prev_qa_list: List[Dict[str, str]]):
+    """
+    Evaluate the user's technical round responses using LLaMA.
+
+    Args:
+        prev_qa_list (List[Dict[str, str]]): A list of dictionaries containing question-answer pairs.
+    """
+    try:
+        # Construct the prompt for LLaMA
+        prompt = (
+            "Evaluate the following technical interview responses and score the candidate based on: Questions and Answers given by candiate and on below\n"
+            "1. Communication Score (out of 10) – clarity of explanation.\n"
+            "2. Technical Knowledge Score (out of 10) – accuracy and understanding.\n"
+            "3. Confidence Score (out of 10) – completeness and assertiveness of the answer.\n\n"
+            "Provide a one-sentence feedback summarizing the overall performance.\n\n"
+            "Questions and Answers:\n"
+        )
+
+        for qa in prev_qa_list:
+            prompt += f"Question: {qa['question']}\nAnswer: {qa['answer']}\n\n"
+
+        prompt += "Return response as a string."
+
+        print(f"📜 Prompt for LLaMA: {prompt}")
+
+        # Call LLaMA to evaluate the responses
+        llama_response = llm.invoke(prompt)
+
+        # Extract the content from the response
+        if hasattr(llama_response, "content"):
+            evaluation_result = llama_response.content
+        else:
+            evaluation_result = str(llama_response)
+
+        print(f"✅ Raw LLaMA Response: {evaluation_result}")
+        return evaluation_result  # Return the raw string response
+
+    except Exception as e:
+        print(f"❌ Error in get_technical_feedback_from_llama(): {e}")
+        return f"Error: {e}"
+
+import json
+from typing import Dict
+from fastapi import HTTPException
+
+def get_self_intro_feedback_from_llama(transcript: str):
+    """
+    Evaluate the user's self-introduction transcript using LLaMA.
+
+    Args:
+        transcript (str): The user's self-introduction transcript.
+    """
+    try:
+        # Construct the prompt for LLaMA
+        prompt = (
+            "Evaluate the following self-introduction transcript from a candidate and return:\n"
+            "- communication_score (out of 10)\n"
+            "- confidence_score (out of 10)\n"
+            "- professionalism_score (out of 10)\n"
+            "- feedback (in 1 sentence)\n\n"
+            f"Transcript:\n\"{transcript}\"\n\n"
+            "Return response as a string."
+        )
+
+        print(f"📜 Prompt for LLaMA: {prompt}")
+
+        # Call LLaMA to evaluate the transcript
+        llama_response = llm.invoke(prompt)
+
+        # Extract the content from the response
+        if hasattr(llama_response, "content"):
+            evaluation_result = llama_response.content
+        else:
+            evaluation_result = str(llama_response)
+
+        print(f"✅ Raw LLaMA Response: {evaluation_result}")
+        return evaluation_result  # Return the raw string response
+
+    except Exception as e:
+        print(f"❌ Error in get_self_intro_feedback_from_llama(): {e}")
+        return f"Error: {e}"

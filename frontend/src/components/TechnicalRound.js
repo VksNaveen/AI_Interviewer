@@ -158,7 +158,7 @@ const TechnicalRound = () => {
   };
 
   const handleNext = () => {
-    navigate("/MCQRound");
+    navigate("/dashboard"); // Navigate to the dashboard or next page
   };
 
   return (
@@ -191,7 +191,7 @@ const TechnicalRound = () => {
 
         {isNextVisible && (
           <div className="next-button-container">
-            <button className="next-button" onClick={handleNext}>NEXT</button>
+            <button className="next-button" onClick={handleNext}>SUBMIT</button>
           </div>
         )}
       </main>

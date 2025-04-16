@@ -50,13 +50,15 @@ const SelfIntroduction = () => {
           const sttRes = await axios.post(`${BACKEND_URL}/speechToText/`, formData);
           const transcription = sttRes.data.transcription;
 
-          const llamaRes = await axios.post(`${BACKEND_URL}/llamaConversation/`, {
-            prompt: `Please memorize this self-introduction: ${transcription}`,
+          // Remove llamaConversation API call and send transcription to stopSelfIntroduction
+          const stopRes = await axios.post(`${BACKEND_URL}/stopSelfIntroduction/`, {
+            transcription: transcription,
           });
 
-          setIsBlinking(true);
-          const stopRes = await axios.post(`${BACKEND_URL}/stopSelfIntroduction/`);
           const stopFile = stopRes.data.closing_prompt;
+          const feedback = stopRes.data.feedback; // Feedback from the backend
+          console.log("Feedback:", feedback);
+
           const stopAudio = new Audio(`http://localhost:8000/static/${stopFile}`);
           stopAudio.play();
 

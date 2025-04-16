@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 import "../../src/MCQRound.css"; // Import the updated CSS file
 
 const MCQRound = () => {
@@ -6,6 +7,8 @@ const MCQRound = () => {
   const [currentSlide, setCurrentSlide] = useState(1); // Track the current slide (1 or 2)
   const [selectedAnswers, setSelectedAnswers] = useState({}); // Store selected answers
   const [timer, setTimer] = useState(1200); // 20-minute countdown timer
+
+  const navigate = useNavigate(); // ✅ Initialize navigate
 
   useEffect(() => {
     // Fetch MCQs from the backend on component mount
@@ -68,12 +71,20 @@ const MCQRound = () => {
   const handleSubmit = async () => {
     try {
       // Prepare the payload with questions and selected answers
-      const payload = {
-        questions: questions,
-        selectedAnswers: selectedAnswers,
-      };
+      const payload = questions.map((question) => ({
+        question: question.question,
+        answer: selectedAnswers[question.id] || "", // Use an empty string if no answer is selected
+      }));
 
-      // Call the stopMCQRound API
+      console.log("Payload being sent:", payload);
+
+      // Validate payload before sending
+      if (payload.length === 0) {
+        console.error("No questions or answers to submit!");
+        return;
+      }
+
+      // Call the submitMCQ API
       const response = await fetch("http://localhost:8000/api/submitMCQ/", {
         method: "POST",
         headers: {
@@ -83,13 +94,15 @@ const MCQRound = () => {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error details from server:", errorData);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       console.log("MCQ round submitted successfully!");
 
       // Navigate to the technical round page
-      navigate("/technical-round");
+      navigate("/technical-round"); // ✅ Use navigate to redirect
     } catch (error) {
       console.error("Error submitting MCQ round:", error);
     }
