@@ -26,7 +26,17 @@ const SelfIntroduction = () => {
       setStatus("Starting self-introduction...");
       setIsBlinking(true);
 
-      const startRes = await axios.post(`${BACKEND_URL}/startSelfIntroduction/`);
+      const token = localStorage.getItem("access_token"); // Retrieve the token
+
+      const startRes = await axios.post(
+        `${BACKEND_URL}/startSelfIntroduction/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the Bearer token
+          },
+        }
+      );
       const startFile = startRes.data.ai_prompt;
       const startAudio = new Audio(`http://localhost:8000/static/${startFile}`);
       setAudio(startAudio);
@@ -47,13 +57,22 @@ const SelfIntroduction = () => {
           const formData = new FormData();
           formData.append("audio_file", audioBlob, "intro.wav");
 
-          const sttRes = await axios.post(`${BACKEND_URL}/speechToText/`, formData);
+          const sttRes = await axios.post(`${BACKEND_URL}/speechToText/`, formData, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include the Bearer token
+            },
+          });
           const transcription = sttRes.data.transcription;
 
-          // Remove llamaConversation API call and send transcription to stopSelfIntroduction
-          const stopRes = await axios.post(`${BACKEND_URL}/stopSelfIntroduction/`, {
-            transcription: transcription,
-          });
+          const stopRes = await axios.post(
+            `${BACKEND_URL}/stopSelfIntroduction/`,
+            { transcription },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`, // Include the Bearer token
+              },
+            }
+          );
 
           const stopFile = stopRes.data.closing_prompt;
           const feedback = stopRes.data.feedback; // Feedback from the backend

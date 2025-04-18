@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 import "../../src/MCQRound.css"; // Import the updated CSS file
+import axios from "axios";
+
+const BACKEND_URL = "http://localhost:8000/api"; // Replace with your backend URL
 
 const MCQRound = () => {
   const [questions, setQuestions] = useState([]); // Store the list of MCQs
@@ -70,43 +73,41 @@ const MCQRound = () => {
 
   const handleSubmit = async () => {
     try {
-      // Prepare the payload with questions and selected answers
-      const payload = questions.map((question) => ({
-        question: question.question,
-        answer: selectedAnswers[question.id] || "", // Use an empty string if no answer is selected
-      }));
+        const payload = questions.map((question) => ({
+            question: question.question,
+            answer: selectedAnswers[question.id] || "",
+        }));
 
-      console.log("Payload being sent:", payload);
+        console.log("Payload being sent:", payload);
 
-      // Validate payload before sending
-      if (payload.length === 0) {
-        console.error("No questions or answers to submit!");
-        return;
-      }
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            console.error("No token found. Please log in again.");
+            return;
+        }
 
-      // Call the submitMCQ API
-      const response = await fetch("http://localhost:8000/api/submitMCQ/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+        const response = await axios.post(
+            `${BACKEND_URL}/submitMCQ/`,
+            payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error details from server:", errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      console.log("MCQ round submitted successfully!");
-
-      // Navigate to the technical round page
-      navigate("/technical-round"); // ✅ Use navigate to redirect
+        console.log("MCQ round submitted successfully!");
+        console.log("Response:", response.data);
+        navigate("/technical-round");
     } catch (error) {
-      console.error("Error submitting MCQ round:", error);
+        console.error("Error submitting MCQ round:", error);
+        if (error.response && error.response.status === 500) {
+            alert("An error occurred while processing your MCQ round. Please try again.");
+        } else {
+            alert("Failed to submit MCQ round. Please check your internet connection.");
+        }
     }
-  };
+};
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);

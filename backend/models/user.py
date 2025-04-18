@@ -9,11 +9,14 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
-    password_hash = Column(String)
-    full_name = Column(String)  # Corrected column name
+    hashed_password = Column(String)  # Correct field name
+    full_name = Column(String)
 
-    # Define Relationship with Profile
-    profile = relationship("Profile", uselist=False, back_populates="user")
+    # Reverse relationships
+    mcq_scores = relationship("MCQRoundScore", back_populates="user")
+    technical_scores = relationship("TechnicalRoundScore", back_populates="user")
+    intro_scores = relationship("SelfIntroductionScore", back_populates="user")
+    profile = relationship("Profile", back_populates="user", uselist=False)
 
 class UserSignup(BaseModel):
     username: str

@@ -4,6 +4,7 @@ body {
   padding: 0;
   font-family: Arial, sans-serif;
   background: linear-gradient(to bottom, #f0f8ff, #e6e6fa);
+  color: #333; /* Darker text for better readability */
 }
 
 /* Dashboard Container */
@@ -11,12 +12,44 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2c3e50;
+  color: white;
+  padding: 10px 20px;
+}
+
+.toolbar-logo img {
+  height: 50px;
+}
+
+.toolbar-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.toolbar-links a {
+  color: white;
+  margin-left: 20px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.toolbar-links a:hover {
+  text-decoration: underline;
 }
 
 /* Main Content */
 .main-content {
-  margin-top: 60px; /* Add margin to avoid overlap with the top nav */
+  flex: 1;
+  overflow-y: auto;
   padding: 20px;
+  background-color: #f4f4f4;
 }
 
 #mcq-container {
@@ -136,68 +169,186 @@ body {
 }
 
 .tile {
-  background-color: #4b0082;
+  background-color: #3498db;
   color: white;
   padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
   text-align: center;
-  font-size: 18px;
+  width: 200px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tile h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.tile p {
+  margin: 10px 0 0;
+  font-size: 1.5rem;
   font-weight: bold;
 }
 
 /* Interview History */
 .interview-history {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
+  margin-top: 20px;
+}
+
+.interview-section {
+  display: flex; /* Use flexbox to align items side by side */
+  flex-wrap: wrap; /* Allow wrapping if there are too many items */
+  gap: 15px; /* Add smaller spacing between items */
+  margin-bottom: 30px;
+  justify-content: center; /* Center align the items */
 }
 
 .interview-card {
   background-color: white;
-  padding: 15px;
-  border-radius: 5px;
+  padding: 10px; /* Reduce padding to make cards smaller */
+  border-radius: 8px; /* Slightly smaller border radius */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  flex: 1 1 calc(30% - 20px); /* Make cards take up 30% of the width with spacing */
+  display: flex;
+  flex-direction: column; /* Keep content inside the card stacked */
+  justify-content: space-between;
+  gap: 8px; /* Add smaller spacing between elements inside the card */
+  min-width: 250px; /* Ensure a smaller minimum width for smaller screens */
+  max-width: 300px; /* Limit the maximum width of the cards */
 }
 
-.interview-card h2 {
-  margin: 0;
-  font-size: 18px;
-  color: #4b0082;
+.interview-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem; /* Reduce font size for smaller cards */
+  color: #2c3e50; /* Darker color for better readability */
 }
 
 .interview-card p {
+  margin: 4px 0;
+  font-size: 0.9rem; /* Reduce font size for text */
+  color: #555; /* Softer color for text */
+}
+
+.interview-card .scores {
+  margin-bottom: 8px;
+  color: #333; /* Darker text for scores */
+}
+
+.interview-card .feedback {
+  background-color: #f9f9f9;
+  padding: 8px; /* Reduce padding for smaller feedback box */
+  border-radius: 5px;
+  font-size: 0.85rem; /* Slightly smaller font size */
+  color: #444; /* Slightly darker text for feedback */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow for feedback box */
+}
+
+/* Combined Interview Card */
+.combined-interview-card {
+  background-color: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.combined-interview-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.combined-scores {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.combined-scores > div {
+  flex: 1;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.combined-scores h4 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #4b0082;
+}
+
+.combined-scores p {
   margin: 5px 0;
-  font-size: 14px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* Section Headings */
+.interview-section h2 {
+  font-size: 1.3rem; /* Slightly smaller font size */
+  color: #4b0082; /* Indigo color for section headings */
+  margin-bottom: 10px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 5px;
+  width: 100%; /* Ensure the heading spans the full width */
+  text-align: center; /* Center align the section headings */
+}
+
+/* Start Interview Button Container */
+.start-interview-container {
+  text-align: center;
+  margin: 10px 0; /* Reduce spacing around the button */
+  position: relative; /* Ensure it doesn't affect other elements */
 }
 
 /* Start Interview Button */
-.start-interview-container {
-  text-align: center;
-  margin-top: 20px;
-}
-
 .start-interview-button {
-  width: 20%;
-  padding: 12px;
-  margin-top: 20px;
-  background: linear-gradient(90deg, #ff00ff, #6600ff); /* Same button gradient as Login page */
+  width: 300px;
+  background-color: #e74c3c;
   color: white;
+  padding: 6px 12px; /* Reduce padding to make the button smaller */
   border: none;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: bold;
+  border-radius: 5px;
+  font-size: 0.8rem; /* Adjust font size to make it smaller */
   cursor: pointer;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .start-interview-button:hover {
-  background: linear-gradient(90deg, #ff00ff, #0055ff);
-  box-shadow: 0 0 20px rgba(255, 0, 255, 1);
+  background-color: #c0392b;
 }
 
 .start-interview-button:active {
-  transform: scale(0.98); /* Slight press effect */
+  transform: scale(0.96); /* Slight press effect */
+}
+
+/* Chart Container */
+.chart-container {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Feedback Container */
+.feedback-container {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-container h3 {
+  margin-bottom: 10px;
+  color: #4b0082;
+}
+
+.feedback-container p {
+  margin: 5px 0;
+  font-size: 1rem;
+  color: #333;
 }

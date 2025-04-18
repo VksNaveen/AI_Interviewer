@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import "../Login.css";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const BACKEND_URL = "http://localhost:8000";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,20 +15,32 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const response = await fetch("http://localhost:8000/auth/login/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+    const { email, password } = formData;
+    try {
+      const response = await axios.post(`${BACKEND_URL}/auth/login/`, {
+        email,
+        password,
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      localStorage.setItem("token", data.token);
-      navigate("/dashboard");
-    } else {
-      alert("Invalid credentials!");
+      const { access_token } = response.data; // Extract the token
+      if (access_token) {
+        localStorage.setItem("access_token", access_token); // Save the token to local storage
+        console.log("Token saved:", access_token);
+        navigate("/dashboard"); // Redirect to the dashboard or another page
+      } else {
+        console.error("No token received from the server.");
+      }
+    } catch (error) {
+      console.error("Login failed:", error.response?.data || error.message);
     }
   };
+
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    console.error("No token found. Please log in again.");
+  } else {
+    console.log("Token retrieved:", token);
+  }
 
   return (
     <div className="login-container">

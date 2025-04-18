@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.models.profile import Profile
 from backend.models.user import User
-from backend.services.auth_service import get_current_user
+from backend.services.auth_service import get_current_user, verify_jwt_token  # ✅ Import verify_jwt_token
 from pydantic import BaseModel
 from typing import List, Optional
 import os
@@ -54,7 +54,7 @@ def get_profile(current_user: User = Depends(get_current_user), db: Session = De
 # ✅ POST Profile (For Postman Testing)
 @router.post("/", tags=["Profile Management"])
 def get_profile_with_token(token: str, db: Session = Depends(get_db)):
-    payload = verify_jwt_token(token)
+    payload = verify_jwt_token(token)  # ✅ Use verify_jwt_token to decode the token
 
     if payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Token")

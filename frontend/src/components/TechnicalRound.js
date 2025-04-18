@@ -139,23 +139,39 @@ const TechnicalRound = () => {
 
   const stopTechnicalRound = async () => {
     try {
-      setStatus("Stopping technical round...");
-      const stopRes = await axios.post(`${BACKEND_URL}/stopTechRound/`);
-      const stopFile = stopRes.data.closing_prompt;
-      const stopAudio = new Audio(`http://localhost:8000/static/${stopFile}?t=${Date.now()}`);
-      setIsPlayingAudio(true);
-      stopAudio.play();
+        const token = localStorage.getItem("access_token"); // Retrieve the token
+        if (!token) {
+            console.error("No token found. Please log in again.");
+            return;
+        }
 
-      stopAudio.onended = () => {
-        setIsPlayingAudio(false);
-        setStatus("Technical round completed!");
-        setIsNextVisible(true);
-      };
+        const response = await axios.post(
+            `${BACKEND_URL}/stopTechRound/`,
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`, // Include the Bearer token
+                },
+            }
+        );
+
+        const { closing_prompt, feedback } = response.data;
+        console.log("Feedback:", feedback);
+
+        const stopAudio = new Audio(`http://localhost:8000/static/${closing_prompt}?t=${Date.now()}`);
+        setIsPlayingAudio(true);
+        stopAudio.play();
+
+        stopAudio.onended = () => {
+            setIsPlayingAudio(false);
+            setStatus("Technical round completed!");
+            setIsNextVisible(true);
+        };
     } catch (error) {
-      console.error("Error during stopTechnicalRound:", error);
-      setStatus("Error occurred while stopping technical round");
+        console.error("Error during stopTechnicalRound:", error);
+        setStatus("Error occurred while stopping technical round. Please try again.");
     }
-  };
+};
 
   const handleNext = () => {
     navigate("/dashboard"); // Navigate to the dashboard or next page
