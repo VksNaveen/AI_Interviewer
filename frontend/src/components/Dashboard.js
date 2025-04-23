@@ -6,14 +6,117 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 const BACKEND_URL = "http://localhost:8000/api"; // Replace with your backend URL
 
+const ProjectInfo = () => (
+  <div className="project-info">
+    <h2>Welcome to AI Interviewer</h2>
+    <div className="project-description">
+      <p>
+        The AI Interviewer is a smart, interactive platform designed to simulate real interview 
+        experiences using advanced AI models. It guides users through different rounds—Self Introduction, 
+        Technical Questions, and MCQs—using voice prompts and evaluates their responses in real-time.
+      </p>
+      
+      <div className="features">
+        <h3>Key Features</h3>
+        <div className="feature-grid">
+          <div className="feature-item">
+            <span className="feature-icon">🎤</span>
+            <p>Voice-based interaction to simulate real interview environments</p>
+          </div>
+          <div className="feature-item">
+            <span className="feature-icon">🤖</span>
+            <p>LLaMA-powered feedback on communication, technical knowledge, and confidence</p>
+          </div>
+          <div className="feature-item">
+            <span className="feature-icon">📊</span>
+            <p>Score tracking and feedback summaries to help users improve</p>
+          </div>
+          <div className="feature-item">
+            <span className="feature-icon">📚</span>
+            <p>RAG (Retrieval-Augmented Generation) integration for context-aware questioning</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="goal-section">
+        <h3>Our Goal</h3>
+        <p>
+          The goal is to help users practice, improve, and gain confidence in interviews using 
+          personalized AI feedback.
+        </p>
+      </div>
+
+      <div className="get-started">
+        <h3>Ready to Begin?</h3>
+        <p>Click the "START INTERVIEW" button below to begin your interview practice journey!</p>
+      </div>
+    </div>
+  </div>
+);
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null); // Store the summary data
   const [message, setMessage] = useState(""); // Store the "no interviews" message
   const [chartData, setChartData] = useState([]); // Data for the chart
 
-  const handleStartInterview = () => {
-    navigate("/self-introduction");
+  const handleStartInterview = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        alert("Please login again.");
+        navigate("/");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:8000/profile/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.data || response.data === "Profile not found") {
+        alert("Please create your profile before starting the interview.");
+        navigate("/profile-update");
+        return;
+      }
+
+      // Check for required fields
+      const profile = response.data;
+      const requiredFields = {
+        company_experience: "Work experience",
+        skills: "Skills",
+        preferred_role: "Preferred role",
+        education: "Education details"
+      };
+
+      const missingFields = [];
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!profile[field] || 
+            (Array.isArray(profile[field]) && profile[field].length === 0) ||
+            (typeof profile[field] === 'string' && profile[field].trim() === '')) {
+          missingFields.push(label);
+        }
+      }
+
+      if (missingFields.length > 0) {
+        alert(`Please complete the following in your profile: ${missingFields.join(", ")}`);
+        navigate("/profile-update");
+        return;
+      }
+
+      // If profile is complete, proceed to interview
+      navigate("/self-introduction");
+    } catch (error) {
+      if (error.response?.status === 401) {
+        alert("Your session has expired. Please login again.");
+        localStorage.removeItem("access_token");
+        navigate("/");
+      } else {
+        console.error("Error checking profile:", error);
+        alert("Error checking profile. Please try again.");
+      }
+    }
   };
 
   useEffect(() => {
@@ -82,7 +185,7 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="main-content">
         {message ? (
-          <div className="no-interviews-message">{message}</div>
+          <ProjectInfo />
         ) : summary ? (
           <>
             <h2 className="page-heading">Interview Summary</h2>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Select from "react-select"; 
 import "../../src/UserProfileUpdate.css"; 
@@ -38,6 +38,7 @@ const UserProfileUpdate = () => {
   const [education, setEducation] = useState([{ degree: "", institution: "", year_of_passing: "", grade_or_percentage: "" }]);
   const [certifications, setCertifications] = useState([]);
   const [resume, setResume] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const skillOptions = [
     { value: "Python", label: "Python" },
@@ -145,30 +146,109 @@ const UserProfileUpdate = () => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("company_experience", JSON.stringify(companyExperience)); // JSON string
-    formData.append("skills", JSON.stringify(skills.map((skill) => skill.value))); // JSON string
-    formData.append("preferred_role", preferredRole); // String
-    formData.append("education", JSON.stringify(education)); // JSON string
-    formData.append("certifications", JSON.stringify(certifications.map((cert) => cert.value))); // JSON string
+    formData.append("company_experience", JSON.stringify(companyExperience));
+    formData.append("skills", JSON.stringify(skills.map((skill) => skill.value)));
+    formData.append("preferred_role", preferredRole);
+    formData.append("education", JSON.stringify(education));
+    formData.append("certifications", JSON.stringify(certifications.map((cert) => cert.value)));
     if (resume) {
-      formData.append("resume", resume); // File
+      formData.append("resume", resume);
     }
-
-    console.log("Form Data:", Object.fromEntries(formData.entries())); // Debugging
 
     try {
-      const token = localStorage.getItem("token"); // Retrieve the token from localStorage
-      const response = await axios.put("http://localhost:8000/profile/updateProfile/", formData, {
+      const token = localStorage.getItem("access_token");
+      const endpoint = isLoading ? "createProfile" : "updateProfile";
+      
+      const response = await axios({
+        method: isLoading ? 'post' : 'put',
+        url: `http://localhost:8000/profile/${endpoint}/`,
+        data: formData,
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Profile updated successfully:", response.data);
+
+      console.log("Profile saved successfully:", response.data);
+      alert("Profile saved successfully!");
+      
     } catch (error) {
-      console.error("Error updating profile:", error);
+      if (error.response?.status === 401) {
+        alert("Your session has expired. Please login again.");
+        localStorage.removeItem("access_token");
+        window.location.href = '/login';
+      } else {
+        console.error("Error saving profile:", error);
+        alert("Error saving profile. Please try again.");
+      }
     }
   };
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const response = await axios.get("http://localhost:8000/profile/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data && response.data !== "Profile not found") {
+          if (response.data.company_experience && response.data.company_experience.length > 0) {
+            setCompanyExperience(response.data.company_experience);
+          }
+
+          if (response.data.skills && response.data.skills.length > 0) {
+            const formattedSkills = response.data.skills.map(skill => ({
+              value: skill,
+              label: skill
+            }));
+            setSkills(formattedSkills);
+          }
+
+          if (response.data.preferred_role) {
+            setPreferredRole(response.data.preferred_role);
+          }
+
+          if (response.data.education && response.data.education.length > 0) {
+            setEducation(response.data.education);
+          }
+
+          if (response.data.certifications && response.data.certifications.length > 0) {
+            const formattedCertifications = response.data.certifications.map(cert => ({
+              value: cert,
+              label: cert
+            }));
+            setCertifications(formattedCertifications);
+          }
+        }
+      } catch (error) {
+        if (error.response?.status === 401) {
+          alert("Your session has expired. Please login again.");
+          localStorage.removeItem("access_token");
+          window.location.href = '/login';
+        } else if (error.response?.status !== 404) {
+          console.error("Error fetching profile:", error);
+          alert("Error loading profile data. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="profile-update-page">
+        <div className="profile-update-container">
+          <h2 className="page-title">Loading Profile...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-update-page">

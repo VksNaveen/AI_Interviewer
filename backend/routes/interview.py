@@ -15,18 +15,49 @@ from backend.models.user import User
 from backend.models.round_scores import MCQRoundScore, TechnicalRoundScore, SelfIntroductionScore
 from backend.services.round_service import save_mcq_score, save_technical_score, save_intro_score, get_mcq_scores, get_technical_scores, get_self_intro_scores
 from backend.services.auth_service import get_current_user
-
+import pinecone
+from sentence_transformers import SentenceTransformer
+# from llama_cpp import Llama
+import random
+from pinecone import Pinecone, ServerlessSpec
 from groq import Groq
 from langchain_groq import ChatGroq
 
 DetectorFactory.seed = 0
 router = APIRouter()
 
-load_dotenv()
 
+
+# ✅ Load environment variables
+load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+
+# ✅ Safety check for keys
 if not GROQ_API_KEY:
     raise ValueError("❌ GROQ_API_KEY is not found. Please check your .env file.")
+
+if not PINECONE_API_KEY:
+    raise ValueError("❌ PINECONE_API_KEY is not found. Please check your .env file.")
+
+# ✅ Initialize Pinecone with supported region for free-tier users
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index_name = 'mockinterviewvector'
+allowed_region = "us-east-1"  # ✅ Use this to avoid INVALID_ARGUMENT error
+
+# ✅ Create index only if not exists
+existing_indexes = [i.name for i in pc.list_indexes()]
+if index_name not in existing_indexes:
+    pc.create_index(
+        name=index_name,
+        dimension=384,
+        metric="cosine",
+        spec=ServerlessSpec(cloud="aws", region=allowed_region)
+    )
+
+index = pc.Index(index_name)
+# Fix deterministic output for langdetect
+DetectorFactory.seed = 0
 
 client = Groq(api_key=GROQ_API_KEY)
 llm = ChatGroq(
