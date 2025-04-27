@@ -33,23 +33,30 @@ const MCQRound = () => {
 
   const fetchQuestions = async () => {
     try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.error("No token found. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
       const response = await fetch("http://localhost:8000/api/startMCQRound/", {
         method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
 
-      // Extract and parse the questions string
-      const rawQuestions = data.questions;
-      const jsonStartIndex = rawQuestions.indexOf("["); // Find the start of the JSON array
-      const jsonEndIndex = rawQuestions.lastIndexOf("]") + 1; // Find the end of the JSON array
-      const questionsString = rawQuestions.slice(jsonStartIndex, jsonEndIndex); // Extract the JSON array as a string
-      const parsedQuestions = JSON.parse(questionsString); // Parse the JSON string
-
+      // Extract and parse the questions
+      const questions = data.questions;
+      
       // Add unique IDs to each question
-      const questionsWithIds = parsedQuestions.map((question, index) => ({
+      const questionsWithIds = questions.map((question, index) => ({
         ...question,
         id: index + 1,
       }));
@@ -57,6 +64,9 @@ const MCQRound = () => {
       setQuestions(questionsWithIds); // Update the questions state
     } catch (error) {
       console.error("Error fetching MCQs:", error);
+      if (error.response?.status === 401) {
+        navigate("/login");
+      }
     }
   };
 
@@ -137,7 +147,7 @@ const MCQRound = () => {
         <p id="mcq-timer" style={{ color: getTimerColor() }}>
           Time remaining: {formatTime(timer)}
         </p>
-        <p id="mcq-progress">You’ve answered {answeredCount}/10 questions</p>
+        <p id="mcq-progress">You've answered {answeredCount}/10 questions</p>
 
         <div id="mcq-questions">
           {slideQuestions.map((question) => (

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { FaMicrophone } from "react-icons/fa";
+import { FaMicrophone, FaRobot } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../../src/SelfIntroduction.css";
 
@@ -30,8 +30,23 @@ const TechnicalRound = () => {
 
   const startTechnicalRound = async () => {
     try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.error("No token found. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
       setStatus("Starting technical round...");
-      const startRes = await axios.post(`${BACKEND_URL}/startTechnicalRound/`);
+      const startRes = await axios.post(
+        `${BACKEND_URL}/startTechnicalRound/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const startFile = startRes.data.ai_prompt;
       const startAudio = new Audio(`http://localhost:8000/static/${startFile}?t=${Date.now()}`);
       setIsPlayingAudio(true);
@@ -44,7 +59,11 @@ const TechnicalRound = () => {
       };
     } catch (error) {
       console.error("Error during startTechnicalRound:", error);
-      setStatus("Error occurred during technical round preparation");
+      if (error.response?.status === 401) {
+        navigate("/login");
+      } else {
+        setStatus("Error occurred during technical round preparation");
+      }
     }
   };
 
@@ -55,8 +74,23 @@ const TechnicalRound = () => {
     }
 
     try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.error("No token found. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
       setStatus(`Asking question ${questionCount + 1}...`);
-      const questionRes = await axios.post(`${BACKEND_URL}/generateTechQuestion/`, prevQA);
+      const questionRes = await axios.post(
+        `${BACKEND_URL}/generateTechQuestion/`,
+        prevQA,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const questionText = questionRes.data.new_question;
       const questionFile = questionRes.data.speech_file;
 
@@ -82,17 +116,38 @@ const TechnicalRound = () => {
       };
     } catch (error) {
       console.error("Error during generateTechQuestion:", error);
-      setStatus("Error occurred while generating question");
+      if (error.response?.status === 401) {
+        navigate("/login");
+      } else {
+        setStatus("Error occurred while generating question");
+      }
     }
   };
 
   const stopRecordingAndProceed = async (questionText) => {
     try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.error("No token found. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
       const audioBlob = await stopRecording();
 
       const formData = new FormData();
       formData.append("audio_file", audioBlob, `answer_${questionCount + 1}.wav`);
-      const sttRes = await axios.post(`${BACKEND_URL}/speechToText/`, formData);
+      
+      const sttRes = await axios.post(
+        `${BACKEND_URL}/speechToText/`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       const transcription = sttRes.data.transcription;
 
       console.log("Question: ", questionText);
@@ -102,7 +157,11 @@ const TechnicalRound = () => {
       setQuestionCount((prev) => prev + 1);
     } catch (error) {
       console.error("Error during stopRecordingAndProceed:", error);
-      setStatus("Error occurred while processing the answer");
+      if (error.response?.status === 401) {
+        navigate("/login");
+      } else {
+        setStatus("Error occurred while processing the answer");
+      }
     }
   };
 
@@ -195,9 +254,10 @@ const TechnicalRound = () => {
         <h1 className="page-heading">Technical Round</h1>
 
         <div className="ai-interaction-container">
-          <div className="ai-icon-container">
-            <div className={`ai-icon ${isPlayingAudio ? "blinking" : ""}`}></div>
-          </div>
+          <FaRobot
+            size={150}
+            className={`ai-icon ${isPlayingAudio ? "blinking" : ""}`}
+          />
           <p className="status-text">{status}</p>
           <div className="mic-container">
             <FaMicrophone size={80} color={isRecording ? "red" : "black"} className={`mic-icon ${isRecording ? "recording" : ""}`} />

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List, Dict
+from typing import List, Dict, Set
 from pydantic import BaseModel
 from datetime import datetime
 import os
@@ -9,19 +9,23 @@ from langdetect import detect, DetectorFactory
 from gtts import gTTS
 from gtts.lang import tts_langs
 from dotenv import load_dotenv
+import random
+import hashlib
 
 from backend.database import get_db
 from backend.models.user import User
+from backend.models.profile import Profile
 from backend.models.round_scores import MCQRoundScore, TechnicalRoundScore, SelfIntroductionScore
 from backend.services.round_service import save_mcq_score, save_technical_score, save_intro_score, get_mcq_scores, get_technical_scores, get_self_intro_scores
 from backend.services.auth_service import get_current_user
 import pinecone
 from sentence_transformers import SentenceTransformer
 # from llama_cpp import Llama
-import random
 from pinecone import Pinecone, ServerlessSpec
 from groq import Groq
 from langchain_groq import ChatGroq
+from transformers import AutoTokenizer, AutoModel
+import torch
 
 DetectorFactory.seed = 0
 router = APIRouter()
@@ -42,7 +46,7 @@ if not PINECONE_API_KEY:
 
 # ✅ Initialize Pinecone with supported region for free-tier users
 pc = Pinecone(api_key=PINECONE_API_KEY)
-index_name = 'mockinterviewvector'
+index_name = 'aiinterviewer'
 allowed_region = "us-east-1"  # ✅ Use this to avoid INVALID_ARGUMENT error
 
 # ✅ Create index only if not exists
@@ -55,9 +59,20 @@ if index_name not in existing_indexes:
         spec=ServerlessSpec(cloud="aws", region=allowed_region)
     )
 
+# Initialize models
 index = pc.Index(index_name)
-# Fix deterministic output for langdetect
-DetectorFactory.seed = 0
+# Initialize embedding model using a public model
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+
+def get_embedding(text: str) -> list:
+    """Generate embedding using sentence-transformers model"""
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    with torch.no_grad():
+        outputs = embedding_model(**inputs)
+    # Use mean pooling to get sentence embedding
+    embeddings = outputs.last_hidden_state.mean(dim=1)
+    return embeddings.squeeze().tolist()
 
 client = Groq(api_key=GROQ_API_KEY)
 llm = ChatGroq(
@@ -65,6 +80,9 @@ llm = ChatGroq(
     groq_api_key=GROQ_API_KEY,
     temperature=0.5
 )
+
+# Fix deterministic output for langdetect
+DetectorFactory.seed = 0
 
 def generate_speech_from_text(text: str, file_name: str = "output_speech.mp3"):
     try:
@@ -123,10 +141,13 @@ def llama_conversation(request: LlamaConversationRequest):
 
 
 @router.post("/startSelfIntroduction/")
-async def start_self_introduction():
+async def start_self_introduction(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
         prompt_text = (
-            "Hello, I’m Voxa, your AI interview coach. You are about to begin the self-introduction round. "
+            f"Hello {current_user.full_name}, I'm Voxa, your AI interview coach. You are about to begin the self-introduction round. "
             "You will have 30 seconds to speak. Please share your name, background, and career goals. Begin speaking after the beep."
         )
         speech_file = generate_speech_from_text(prompt_text, "intro_start.wav")
@@ -147,11 +168,12 @@ async def stop_self_introduction(
     try:
         feedback = get_self_intro_feedback_from_llama(request.transcription, db=db, user_id=current_user.id)
         closing_prompt = (
-            "Thank you for your introduction. You may now proceed to the next round when you're ready."
+            f"Thank you {current_user.full_name} for your introduction. You may now proceed to the next round when you're ready."
         )
         speech_file = generate_speech_from_text(closing_prompt, "self_intro_stop.mp3")
         return {"closing_prompt": speech_file, "feedback": feedback}
     except Exception as e:
+        print(f"❌ Error in /stopSelfIntroduction/: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to stop self-introduction: {e}")
 
 
@@ -174,26 +196,184 @@ class GenerateTechQuestionRequest(BaseModel):
 
 prev_qa_list = []
 
-@router.post("/generateTechQuestion/")
-async def generate_technical_question(request: GenerateTechQuestionRequest):
+# Add global set to track asked questions per user
+user_question_history = {}
+
+# Add function to generate question hash
+def get_question_hash(question: str) -> str:
+    return hashlib.md5(question.lower().encode()).hexdigest()
+
+# Add function to check and update question history
+def update_question_history(user_id: int, question_hash: str) -> bool:
+    """
+    Returns True if question is new, False if it was asked before
+    """
+    if user_id not in user_question_history:
+        user_question_history[user_id] = set()
+    
+    if question_hash in user_question_history[user_id]:
+        return False
+        
+    user_question_history[user_id].add(question_hash)
+    return True
+
+# Add function to store questions in Pinecone
+async def store_question_in_pinecone(question: str, category: str, difficulty: str):
     try:
+        # Generate embedding for the question
+        question_embedding = get_embedding(question)
+        
+        # Create a unique ID for the question
+        question_id = get_question_hash(question)
+        
+        # Store in Pinecone with metadata
+        index.upsert(
+            vectors=[{
+                'id': question_id,
+                'values': question_embedding,
+                'metadata': {
+                    'question': question,
+                    'category': category,
+                    'difficulty': difficulty,
+                    'timestamp': datetime.now().isoformat()
+                }
+            }]
+        )
+        return True
+    except Exception as e:
+        print(f"❌ Error storing question in Pinecone: {e}")
+        return False
+
+@router.post("/generateTechQuestion/")
+async def generate_technical_question(
+    request: GenerateTechQuestionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Get user's profile
+        user_profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+        if not user_profile:
+            print("⚠️ User profile not found, using default profile")
+            skills = ["Software Development"]
+            preferred_role = "Software Engineer"
+        else:
+            skills = user_profile.skills or ["Software Development"]
+            preferred_role = user_profile.preferred_role or "Software Engineer"
+
+        # Store previous Q&A if provided
         if request.prev_question and request.prev_answer:
             prev_qa_list.append({
                 "question": request.prev_question,
                 "answer": request.prev_answer
             })
 
-        prompt = (
-            f"Generate a short technical interview question related to software development. "
-            f"Use simple wording and avoid repetition. Do not exceed 2 sentences.\n\n"
-            f"Previous Q&A context: {prev_qa_list or 'None'}"
-        )
-        llama_response = llm.invoke(prompt)
-        question_text = getattr(llama_response, "content", str(llama_response))
+        # Define question categories and difficulties
+        question_categories = [
+            "Data Structures & Algorithms",
+            "System Design",
+            "Programming Concepts",
+            "Problem Solving",
+            "Software Engineering Practices"
+        ]
+
+        # Add skill-specific categories
+        if skills:
+            for skill in skills:
+                if "frontend" in skill.lower() or "react" in skill.lower():
+                    question_categories.extend(["Frontend Development", "React", "JavaScript"])
+                elif "backend" in skill.lower() or "python" in skill.lower():
+                    question_categories.extend(["Backend Development", "API Design", "Database Systems"])
+                elif "data" in skill.lower():
+                    question_categories.extend(["Data Engineering", "Big Data", "Data Processing"])
+
+        # Select random category and difficulty
+        selected_category = random.choice(question_categories)
+        difficulty_levels = ["Easy", "Medium", "Hard"]
+        selected_difficulty = random.choice(difficulty_levels)
+
+        # Try to find existing question from Pinecone first
+        try:
+            # Generate a random vector to get diverse results
+            random_vector = [random.uniform(-1, 1) for _ in range(384)]
+            
+            # Query Pinecone with filters
+            query_response = index.query(
+                vector=random_vector,
+                top_k=5,
+                include_metadata=True,
+                filter={
+                    "category": selected_category,
+                    "difficulty": selected_difficulty
+                }
+            )
+
+            # Filter out previously asked questions
+            fresh_questions = [
+                match for match in query_response.matches
+                if update_question_history(current_user.id, match.id)
+            ]
+
+            if fresh_questions:
+                # Use a random question from fresh ones
+                selected_question = random.choice(fresh_questions)
+                question_text = selected_question.metadata["question"]
+                print(f"✅ Using existing question from Pinecone: {question_text}")
+            else:
+                # Generate new question if no fresh ones found
+                raise Exception("No fresh questions found in Pinecone")
+        except Exception as e:
+            print(f"⚠️ Pinecone query failed or no fresh questions: {e}")
+            # Generate new question using LLaMA
+            prompt = (
+                f"You are conducting a technical interview for a {preferred_role} position. "
+                f"Generate ONE specific technical question that:\n"
+                f"1. Is in the category: Based on the candidate's skills  {', '.join(skills)} and role {preferred_role}\n"
+                f"2. Has {selected_difficulty} difficulty level\n"
+                f"3. Is specific and requires a detailed technical answer\n"
+                f"4. Is different from previous questions: {json.dumps(prev_qa_list[-3:] if prev_qa_list else 'None')}\n"
+                f"5. Tests the candidate's knowledge in: {', '.join(skills)}\n\n"
+                f"Format your response exactly like this example:\n"
+                f"Question: Explain the concept of dependency injection in software development and provide a practical example.\n\n"
+                f"DO NOT include any prefixes. Start directly with the actual question."
+            )
+
+            # Get response from LLaMA with higher temperature for more randomness
+            llm.temperature = 0.8  # Increase randomness
+            llama_response = llm.invoke(prompt)
+            llm.temperature = 0.5  # Reset temperature
+            
+            response_text = getattr(llama_response, "content", str(llama_response))
+            question_text = response_text.strip()
+            
+            # Clean up the question
+            if question_text.lower().startswith(("here", "technical", "question:")):
+                question_text = question_text.split(":", 1)[-1].strip()
+
+            # Store the new question in Pinecone for future use
+            await store_question_in_pinecone(
+                question=question_text,
+                category=selected_category,
+                difficulty=selected_difficulty
+            )
+
+            # Update question history
+            question_hash = get_question_hash(question_text)
+            update_question_history(current_user.id, question_hash)
+
+        # Generate speech file
         speech_file = generate_speech_from_text(question_text, "technical_question.mp3")
-        return {"new_question": question_text, "speech_file": speech_file}
+        
+        return {
+            "new_question": question_text,
+            "speech_file": speech_file,
+            "category": selected_category,
+            "difficulty": selected_difficulty
+        }
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to generate technical question.")
+        print(f"❌ Error in generateTechQuestion: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate technical question: {str(e)}")
 
 
 @router.post("/stopTechRound/")
@@ -223,20 +403,109 @@ async def stop_tech_round(
 
 
 @router.post("/startMCQRound/", tags=["Interview"])
-async def start_mcq_round():
+async def start_mcq_round(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        # Get user's profile
+        user_profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+        if not user_profile:
+            print("⚠️ User profile not found, using default profile")
+            skills = ["Software Development"]
+            preferred_role = "Software Engineer"
+        else:
+            skills = user_profile.skills or ["Software Development"]
+            preferred_role = user_profile.preferred_role or "Software Engineer"
+
+        # Define categories and difficulties
+        categories = [
+            "Programming Fundamentals",
+            "Data Structures",
+            "Algorithms",
+            "System Design",
+            "Web Development",
+            "Database Management",
+            "Software Architecture",
+            "DevOps & Tools"
+        ]
+
+        # Construct prompt with more diversity requirements
         prompt = (
-            "Create 10 technical multiple-choice questions. Each question must include:\n"
-            "- A concise question string\n"
-            "- Exactly four unique options\n\n"
-            "Return the result as a Python list of dicts like:\n"
-            "[{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"]}, ...]"
+            f"Create 10 diverse technical multiple-choice questions for a {preferred_role} candidate "
+            f"with skills in {', '.join(skills)}.\n\n"
+            f"Requirements for the 10 questions:\n"
+            f"- Each question MUST be from a different category based on the candidate's skills {', '.join(skills)} and role {preferred_role}:\n"
+            f"- Include a mix of difficulty levels (easy, medium, hard)\n"
+            f"- Questions should test both theoretical knowledge and practical application\n"
+            f"- No two questions should cover the same concept\n"
+            f"- Include questions specific to the candidate's skills\n\n"
+            f"Each question must have:\n"
+            f"- Four unique options (A, B, C, D)\n"
+            f"- One correct answer\n"
+            f"- Clear and unambiguous wording\n\n"
+            f"Return ONLY a JSON array in this format for all 10 questions:Example\n"
+            f"[\n"
+            f"  {{\n"
+            f"    \"question\": \"What is the time complexity of binary search?\",\n"
+            f"    \"options\": [\"O(1)\", \"O(log n)\", \"O(n)\", \"O(n^2)\"],\n"
+            f"    \"correct_answer\": \"O(log n)\",\n"
+            f"    \"category\": \"Algorithms\",\n"
+            f"    \"difficulty\": \"Medium\"\n"
+            f"  }}\n"
+            f"]\n"
         )
+
+        # Get response from LLaMA with higher temperature
+        llm.temperature = 0.8  # Increase randomness
         llama_response = llm.invoke(prompt)
-        questions = getattr(llama_response, "content", str(llama_response))
-        return {"questions": questions}
+        llm.temperature = 0.5  # Reset temperature
+        
+        response_text = getattr(llama_response, "content", str(llama_response))
+        print(f"✅ Response text: {response_text}")
+        # Clean up and parse the response
+        start_idx = response_text.find('[')
+        end_idx = response_text.rfind(']') + 1
+        if start_idx == -1 or end_idx == 0:
+            raise ValueError("Invalid response format from LLaMA")
+            
+        json_str = response_text[start_idx:end_idx]
+        questions_list = json.loads(json_str)
+        print(f"✅ Questions list: {questions_list}")
+        # Validate and filter questions
+        filtered_questions = []
+        used_categories = set()
+        
+        for q in questions_list:
+            # Skip if category already used or question invalid
+            if q["category"] in used_categories or not all(key in q for key in ["question", "options", "correct_answer", "category", "difficulty"]):
+                continue
+                
+            # Generate question hash
+            question_hash = get_question_hash(q["question"])
+            
+            # Skip if question was asked before
+            if not update_question_history(current_user.id, question_hash):
+                continue
+                
+            used_categories.add(q["category"])
+            filtered_questions.append(q)
+            
+            # # Store in Pinecone for future use
+            # await store_question_in_pinecone(
+            #     question=q["question"],
+            #     category=q["category"],
+            #     difficulty=q["difficulty"]
+            # )
+
+        # if len(filtered_questions) < 5:
+        #     raise ValueError("Not enough unique questions generated")
+
+        return {"questions": questions_list}
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating MCQs: {e}")
+        print(f"❌ Error in startMCQRound: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating MCQs: {str(e)}")
 
 
 class SubmitMCQPayload(BaseModel):
@@ -307,7 +576,7 @@ def get_technical_feedback_from_llama(prev_qa_list: List[Dict[str, str]], db: Se
     "- technical_knowledge_score (out of 10)"
     "- confidence_score (out of 10)"
     "Please analyze all answers together and provide just one overall score and one sentence of feedback (exactly 8 words).\n\n"
-    "Final response should be ONLY in this exact JSON format:\n"
+    "Final response should be ONLY in this exact JSON format: Example\n"
     "{\"communication_score\": 6.0, \"technical_knowledge_score\": 5.5, \"confidence_score\": 6.5, \"feedback\": \"Strong fundamentals, needs more depth and clarity.\"}\n\n"
     "Questions and Answers:\n"
 )
@@ -365,32 +634,77 @@ def get_technical_feedback_from_llama(prev_qa_list: List[Dict[str, str]], db: Se
 
 def get_self_intro_feedback_from_llama(transcript: str, db: Session, user_id: int):
     try:
-        prompt = (
-            "Analyze the following self-introduction transcript. Score the candidate in JSON:\n"
-            "- communication_score (out of 10)\n"
-            "- confidence_score (out of 10)\n"
-            "- professionalism_score (out of 10)\n"
-            "- feedback (1 sentence)\n\n"
-            f"Transcript:\n\"{transcript}\"\n\n"
-            "Respond ONLY in this JSON format:\n"
-            "{\"communication_score\": 8.5, \"confidence_score\": 9.0, "
-            "\"professionalism_score\": 8.0, \"feedback\": \"Clear, confident and concise.\"}"
-        )
-        llama_response = llm.invoke(prompt)
-        evaluation = json.loads(getattr(llama_response, "content", str(llama_response)))
+        # Get user's profile to access skills and preferred role
+        user_profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+        if not user_profile:
+            print("⚠️ User profile not found, using default profile")
+            skills = ["Software Development"]
+            preferred_role = "Software Engineer"
+        else:
+            skills = user_profile.skills or ["Software Development"]
+            preferred_role = user_profile.preferred_role or "Software Engineer"
 
+        # Construct prompt for LLaMA with built-in ideal patterns
+        ideal_patterns = [
+            "Clear introduction with name and current role",
+            "Highlight relevant skills and experience",
+            "Express enthusiasm for the target role",
+            "Share a brief career goal or objective",
+            "Maintain professional tone throughout"
+        ]
+
+        prompt = (
+            f"Analyze the following self-introduction transcript for a {preferred_role} candidate with "
+            f"skills in: {', '.join(skills)}.\n\n"
+            f"Key elements to look for:\n"
+            f"{chr(10).join('- ' + pattern for pattern in ideal_patterns)}\n\n"
+            f"Candidate's Transcript:\n\"{transcript}\"\n\n"
+            f"Score the candidate in these categories (out of 10):\n"
+            f"- communication_score: Clarity, structure, and effectiveness of communication\n"
+            f"- confidence_score: Confidence level and presence\n"
+            f"- professionalism_score: Professional tone and relevance to role\n\n"
+            f"Also provide a one-sentence feedback focusing on strengths and areas for improvement.\n\n"
+            f"Respond ONLY in this JSON format: Example\n"
+            f"{{\"communication_score\": 8.5, \"confidence_score\": 9.0, "
+            f"\"professionalism_score\": 8.0, \"feedback\": \"Clear, confident and concise.\"}}"
+        )
+
+        # Get response from LLaMA
+        llama_response = llm.invoke(prompt)
+        response_text = getattr(llama_response, "content", str(llama_response))
+        
+        # Clean up the response to ensure it's valid JSON
+        start_idx = response_text.find('{')
+        end_idx = response_text.rfind('}') + 1
+        if start_idx == -1 or end_idx == 0:
+            raise ValueError("Invalid response format from LLaMA")
+            
+        json_str = response_text[start_idx:end_idx]
+        evaluation = json.loads(json_str)
+
+        # Validate the evaluation data
+        required_fields = ["communication_score", "confidence_score", "professionalism_score", "feedback"]
+        if not all(field in evaluation for field in required_fields):
+            raise ValueError("Missing required fields in evaluation response")
+
+        # Save the scores
         save_intro_score(
             user_id=user_id,
-            comm=evaluation["communication_score"],
-            conf=evaluation["confidence_score"],
-            prof=evaluation["professionalism_score"],
+            comm=float(evaluation["communication_score"]),
+            conf=float(evaluation["confidence_score"]),
+            prof=float(evaluation["professionalism_score"]),
             feedback=evaluation["feedback"],
             db=db
         )
 
         return evaluation
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON Parse Error in self-intro feedback: {e}")
+        print(f"❌ Raw response: {response_text}")
+        raise HTTPException(status_code=500, detail="Failed to parse feedback response")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error in self-intro feedback: {e}")
+        print(f"❌ Error in self-intro feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing self-introduction feedback: {str(e)}")
 
 
 
