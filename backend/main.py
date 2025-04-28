@@ -14,7 +14,7 @@ load_dotenv()
 app = FastAPI()
 
 # Configure CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://ai-interviewer-lilac.vercel.app").split(",")
+ALLOWED_ORIGINS="https://ai-interviewer-lilac.vercel.app"
 
 app.add_middleware(
     CORSMiddleware,

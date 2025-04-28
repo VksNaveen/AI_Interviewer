@@ -1,1 +1,1 @@
-export const BACKEND_URL = "https://ai-interviewer-lilac.vercel.app/"; 
+export const BACKEND_URL = "https://ai-interviewer-ciu9.onrender.com"; 

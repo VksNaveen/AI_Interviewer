@@ -2,8 +2,6 @@ import sys
 sys.path.append("/opt/anaconda3/lib/python3.12/site-packages")  # Ensure correct package path
 
 from langchain_groq import ChatGroq  # Now import should work
-from langchain.prompts import PromptTemplate
-from langchain.document_loaders import WebBaseLoader
 from dotenv import load_dotenv
 # from models.data_clean import initialize_chromadb
 from bs4 import BeautifulSoup
