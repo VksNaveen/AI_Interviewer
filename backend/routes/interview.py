@@ -11,6 +11,7 @@ from gtts.lang import tts_langs
 from dotenv import load_dotenv
 import random
 import hashlib
+import re
 
 from backend.database import get_db
 from backend.models.user import User
@@ -524,30 +525,41 @@ async def submit_mcq(
     try:
         # Construct the prompt for LLaMA
         prompt = (
-            "Evaluate the following MCQ answers. For each:\n"
-            "1. Check if the answer is correct.\n"
-            "2. Return final result in JSON:\n"
+            "Evaluate the following MCQ answers and provide a final score out of 10 and brief feedback.\n"
+            "Return ONLY a JSON response in this exact format: Example\n"
             "{ \"score\": 8.0, \"feedback\": \"Strong performance on networking and fundamentals.\" }\n\n"
+            "Questions and Answers to evaluate:\n\n"
         )
         for response in payload:
             prompt += f"Question: {response.question}\nUser's Answer: {response.answer}\n\n"
+        
+        prompt += "Remember to return ONLY the JSON response in the specified format."
 
         # Call LLaMA to evaluate the answers
         llama_response = llm.invoke(prompt)
         review = getattr(llama_response, "content", str(llama_response))
-
         print(f"✅ Raw LLaMA Response: {review}")  # Log the raw response
 
-        # Validate and clean up the LLaMA response
-        if not review.strip().startswith("{") or not review.strip().endswith("}"):
-            print("❌ LLaMA response is not valid JSON. Attempting to fix...")
-            review = review[review.find("{"):review.rfind("}") + 1]  # Extract the JSON part
-
-        # Parse the response as JSON
+        # Extract JSON from the response
         try:
-            parsed = json.loads(review)  # Attempt to parse the response
-        except json.JSONDecodeError as e:
-            print(f"❌ Error parsing LLaMA response as JSON: {e}")
+            # Find the last occurrence of a JSON-like structure
+            matches = list(re.finditer(r'{[^{]*"score":\s*\d+\.?\d*[^}]*"feedback":[^}]*}', review))
+            if not matches:
+                raise ValueError("No valid JSON structure found in response")
+            
+            json_str = matches[-1].group()  # Take the last match
+            parsed = json.loads(json_str)
+            
+            # Validate the required fields
+            if "score" not in parsed or "feedback" not in parsed:
+                raise ValueError("Missing required fields in JSON response")
+            
+            # Ensure score is a float
+            parsed["score"] = float(parsed["score"])
+            
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"❌ Error parsing LLaMA response: {e}")
+            print(f"❌ Attempted to parse: {review}")
             raise HTTPException(status_code=500, detail="Failed to parse LLaMA response as JSON.")
 
         # Save the score and feedback to the database
@@ -556,7 +568,7 @@ async def submit_mcq(
         return parsed
     except Exception as e:
         print(f"❌ Error in submitMCQ: {e}")
-        raise HTTPException(status_code=500, detail="Failed to submit MCQ round.")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_technical_feedback_from_llama(prev_qa_list: List[Dict[str, str]], db: Session, user_id: int):
@@ -575,7 +587,7 @@ def get_technical_feedback_from_llama(prev_qa_list: List[Dict[str, str]], db: Se
     "- communication_score (out of 10)"
     "- technical_knowledge_score (out of 10)"
     "- confidence_score (out of 10)"
-    "Please analyze all answers together and provide just one overall score and one sentence of feedback (exactly 8 words).\n\n"
+    "Please analyze all answers together and provide just one overall score and one sentence of feedback (exactly 8-12 words).\n\n"
     "Final response should be ONLY in this exact JSON format: Example\n"
     "{\"communication_score\": 6.0, \"technical_knowledge_score\": 5.5, \"confidence_score\": 6.5, \"feedback\": \"Strong fundamentals, needs more depth and clarity.\"}\n\n"
     "Questions and Answers:\n"
