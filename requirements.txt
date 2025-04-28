@@ -20,26 +20,26 @@ gtts==2.5.4
 langdetect==1.0.9
 
 # AI and ML
-pinecone==6.0.2
-pinecone-plugin-interface==0.0.7
-sentence-transformers==4.1.0
+pinecone==3.0.2
+sentence-transformers==2.2.2
 groq==0.23.1
 langchain-groq==0.3.2
 langchain-core==0.3.56
 langsmith==0.3.37
-transformers==4.51.3
-torch==2.7.0
+transformers==4.30.2
+torch==2.0.1
+torchvision==0.15.2
+huggingface-hub==0.16.4
 
 # Additional Dependencies
 requests==2.32.3
 requests-toolbelt==1.0.0
 python-dateutil==2.9.0
-numpy==2.2.5
+numpy==1.24.3
 scikit-learn==1.6.1
 scipy==1.15.2
 Pillow==11.2.1
 tqdm==4.67.1
-huggingface-hub==0.30.2
 regex==2024.11.6
 pyyaml==6.0.2
 safetensors==0.5.3
