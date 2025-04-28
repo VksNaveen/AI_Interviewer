@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../src/Signup.css"; // Import the updated CSS file
 import { Link, useNavigate } from "react-router-dom";
+import { BACKEND_URL } from "./config";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const Signup = () => {
 
     console.log("Data being sent to the backend:", dataToSend); // Debugging log
 
-    const response = await fetch("http://localhost:8000/auth/signup/", {
+    const response = await fetch(`${BACKEND_URL}/auth/signup/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataToSend),

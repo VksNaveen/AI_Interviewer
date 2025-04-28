@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 import "../../src/MCQRound.css"; // Import the updated CSS file
 import axios from "axios";
-
-const BACKEND_URL = "http://localhost:8000/api"; // Replace with your backend URL
+import { BACKEND_URL } from "./config";
 
 const MCQRound = () => {
   const [questions, setQuestions] = useState([]); // Store the list of MCQs
@@ -36,11 +35,11 @@ const MCQRound = () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         console.error("No token found. Please log in again.");
-        navigate("/login");
+        navigate("/");
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/startMCQRound/", {
+      const response = await fetch(`${BACKEND_URL}/api/startMCQRound/`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -65,7 +64,7 @@ const MCQRound = () => {
     } catch (error) {
       console.error("Error fetching MCQs:", error);
       if (error.response?.status === 401) {
-        navigate("/login");
+        navigate("/");
       }
     }
   };
@@ -97,7 +96,7 @@ const MCQRound = () => {
         }
 
         const response = await axios.post(
-            `${BACKEND_URL}/submitMCQ/`,
+            `${BACKEND_URL}/api/submitMCQ/`,
             payload,
             {
                 headers: {

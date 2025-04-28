@@ -1,5 +1,6 @@
 import React from "react";
 import "../About.css";
+import { BACKEND_URL } from "./config";
 
 const About = () => {
   return (

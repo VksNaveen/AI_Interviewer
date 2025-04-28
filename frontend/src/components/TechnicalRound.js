@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaMicrophone, FaRobot } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../../src/SelfIntroduction.css";
+import { BACKEND_URL } from "./config";
 
 const TechnicalRound = () => {
   const [status, setStatus] = useState("Loading...");
@@ -16,7 +17,6 @@ const TechnicalRound = () => {
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
 
-  const BACKEND_URL = "http://localhost:8000/api";
 
   useEffect(() => {
     startTechnicalRound();
@@ -33,13 +33,13 @@ const TechnicalRound = () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         console.error("No token found. Please log in again.");
-        navigate("/login");
+        navigate("/");
         return;
       }
 
       setStatus("Starting technical round...");
       const startRes = await axios.post(
-        `${BACKEND_URL}/startTechnicalRound/`,
+        `${BACKEND_URL}/api/startTechnicalRound/`,
         {},
         {
           headers: {
@@ -48,7 +48,7 @@ const TechnicalRound = () => {
         }
       );
       const startFile = startRes.data.ai_prompt;
-      const startAudio = new Audio(`http://localhost:8000/static/${startFile}?t=${Date.now()}`);
+      const startAudio = new Audio(`${BACKEND_URL}/static/${startFile}?t=${Date.now()}`);
       setIsPlayingAudio(true);
       startAudio.play();
 
@@ -60,7 +60,7 @@ const TechnicalRound = () => {
     } catch (error) {
       console.error("Error during startTechnicalRound:", error);
       if (error.response?.status === 401) {
-        navigate("/login");
+        navigate("/");
       } else {
         setStatus("Error occurred during technical round preparation");
       }
@@ -77,13 +77,13 @@ const TechnicalRound = () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         console.error("No token found. Please log in again.");
-        navigate("/login");
+        navigate("/");
         return;
       }
 
       setStatus(`Asking question ${questionCount + 1}...`);
       const questionRes = await axios.post(
-        `${BACKEND_URL}/generateTechQuestion/`,
+        `${BACKEND_URL}/api/generateTechQuestion/`,
         prevQA,
         {
           headers: {
@@ -94,7 +94,7 @@ const TechnicalRound = () => {
       const questionText = questionRes.data.new_question;
       const questionFile = questionRes.data.speech_file;
 
-      const questionAudio = new Audio(`http://localhost:8000/static/${questionFile}?t=${Date.now()}`);
+      const questionAudio = new Audio(`${BACKEND_URL}/static/${questionFile}?t=${Date.now()}`);
       setIsPlayingAudio(true);
       questionAudio.play();
 
@@ -117,7 +117,7 @@ const TechnicalRound = () => {
     } catch (error) {
       console.error("Error during generateTechQuestion:", error);
       if (error.response?.status === 401) {
-        navigate("/login");
+        navigate("/");
       } else {
         setStatus("Error occurred while generating question");
       }
@@ -129,7 +129,7 @@ const TechnicalRound = () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         console.error("No token found. Please log in again.");
-        navigate("/login");
+        navigate("/");
         return;
       }
 
@@ -139,7 +139,7 @@ const TechnicalRound = () => {
       formData.append("audio_file", audioBlob, `answer_${questionCount + 1}.wav`);
       
       const sttRes = await axios.post(
-        `${BACKEND_URL}/speechToText/`,
+        `${BACKEND_URL}/api/speechToText/`,
         formData,
         {
           headers: {
@@ -158,7 +158,7 @@ const TechnicalRound = () => {
     } catch (error) {
       console.error("Error during stopRecordingAndProceed:", error);
       if (error.response?.status === 401) {
-        navigate("/login");
+        navigate("/");
       } else {
         setStatus("Error occurred while processing the answer");
       }
@@ -205,7 +205,7 @@ const TechnicalRound = () => {
         }
 
         const response = await axios.post(
-            `${BACKEND_URL}/stopTechRound/`,
+            `${BACKEND_URL}/api/stopTechRound/`,
             {},
             {
                 headers: {
@@ -217,7 +217,7 @@ const TechnicalRound = () => {
         const { closing_prompt, feedback } = response.data;
         console.log("Feedback:", feedback);
 
-        const stopAudio = new Audio(`http://localhost:8000/static/${closing_prompt}?t=${Date.now()}`);
+        const stopAudio = new Audio(`${BACKEND_URL}/static/${closing_prompt}?t=${Date.now()}`);
         setIsPlayingAudio(true);
         stopAudio.play();
 

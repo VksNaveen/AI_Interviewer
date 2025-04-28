@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../Login.css";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-
-const BACKEND_URL = "http://localhost:8000";
+import { BACKEND_URL } from "./config";
 
 const Login = () => {
   const navigate = useNavigate();

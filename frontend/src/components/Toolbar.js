@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from "react-router-dom";
 import '../../src/Toolbar.css';
+import { BACKEND_URL } from "./config";
 
 const Toolbar = () => {
   const navigate = useNavigate();

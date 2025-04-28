@@ -1,0 +1,1 @@
+export const BACKEND_URL = "https://ai-interviewer-lilac.vercel.app/"; 

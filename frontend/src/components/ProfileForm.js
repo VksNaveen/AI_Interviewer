@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { BACKEND_URL } from "./config";
 
 const ProfileForm = () => {
   const [companyExperience, setCompanyExperience] = useState([{ company_name: "", years: "" }]);
@@ -60,7 +61,7 @@ const ProfileForm = () => {
     }
 
     try {
-      const response = await axios.put("http://localhost:8000/updateProfile/", formData, {
+      const response = await axios.put(`${BACKEND_URL}/updateProfile/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       console.log("Profile updated successfully:", response.data);

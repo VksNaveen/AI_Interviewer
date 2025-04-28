@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Select from "react-select"; 
 import "../../src/UserProfileUpdate.css"; 
+import { BACKEND_URL } from "./config";
 
 const roleOptions = [
   "Full Stack Developer",
@@ -161,7 +162,7 @@ const UserProfileUpdate = () => {
       
       const response = await axios({
         method: isLoading ? 'post' : 'put',
-        url: `http://localhost:8000/profile/${endpoint}/`,
+        url: `${BACKEND_URL}/profile/${endpoint}/`,
         data: formData,
         headers: {
           "Content-Type": "multipart/form-data",
@@ -188,7 +189,7 @@ const UserProfileUpdate = () => {
     const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        const response = await axios.get("http://localhost:8000/profile/", {
+        const response = await axios.get(`${BACKEND_URL}/profile/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

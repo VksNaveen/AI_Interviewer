@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaMicrophone, FaRobot } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../../src/SelfIntroduction.css";
+import { BACKEND_URL } from "./config";
 
 const SelfIntroduction = () => {
   const [status, setStatus] = useState("Loading...");
@@ -14,8 +15,6 @@ const SelfIntroduction = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
-
-  const BACKEND_URL = "http://localhost:8000/api";
 
   useEffect(() => {
     initiateSelfIntro();
@@ -29,7 +28,7 @@ const SelfIntroduction = () => {
       const token = localStorage.getItem("access_token"); // Retrieve the token
 
       const startRes = await axios.post(
-        `${BACKEND_URL}/startSelfIntroduction/`,
+        `${BACKEND_URL}/api/startSelfIntroduction/`,
         {},
         {
           headers: {
@@ -38,7 +37,7 @@ const SelfIntroduction = () => {
         }
       );
       const startFile = startRes.data.ai_prompt;
-      const startAudio = new Audio(`http://localhost:8000/static/${startFile}`);
+      const startAudio = new Audio(`${BACKEND_URL}/static/${startFile}`);
       setAudio(startAudio);
 
       startAudio.play().catch((error) => {
@@ -57,7 +56,7 @@ const SelfIntroduction = () => {
           const formData = new FormData();
           formData.append("audio_file", audioBlob, "intro.wav");
 
-          const sttRes = await axios.post(`${BACKEND_URL}/speechToText/`, formData, {
+          const sttRes = await axios.post(`${BACKEND_URL}/api/speechToText/`, formData, {
             headers: {
               Authorization: `Bearer ${token}`, // Include the Bearer token
             },
@@ -65,7 +64,7 @@ const SelfIntroduction = () => {
           const transcription = sttRes.data.transcription;
 
           const stopRes = await axios.post(
-            `${BACKEND_URL}/stopSelfIntroduction/`,
+            `${BACKEND_URL}/api/stopSelfIntroduction/`,
             { transcription },
             {
               headers: {
@@ -78,8 +77,13 @@ const SelfIntroduction = () => {
           const feedback = stopRes.data.feedback; // Feedback from the backend
           console.log("Feedback:", feedback);
 
-          const stopAudio = new Audio(`http://localhost:8000/static/${stopFile}`);
-          stopAudio.play();
+          const stopAudio = new Audio(`${BACKEND_URL}/static/${stopFile}`);
+          stopAudio.play().catch((error) => {
+            console.error("Error playing audio:", error);
+            // Continue with the flow even if audio fails
+            setIsBlinking(false);
+            setIsNextEnabled(true);
+          });
 
           stopAudio.onended = () => {
             setIsBlinking(false);

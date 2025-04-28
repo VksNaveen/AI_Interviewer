@@ -327,7 +327,7 @@ async def generate_technical_question(
             print(f"⚠️ Pinecone query failed or no fresh questions: {e}")
             # Generate new question using LLaMA
             prompt = (
-                f"You are conducting a technical interview for a {preferred_role} position. "
+                f"You are conducting a technical interview for a {preferred_role} position. face to face interview so that ask question in a way candidate answer in few words.\n"
                 f"Generate ONE specific technical question that:\n"
                 f"1. Is in the category: Based on the candidate's skills  {', '.join(skills)} and role {preferred_role}\n"
                 f"2. Has {selected_difficulty} difficulty level\n"
@@ -352,11 +352,11 @@ async def generate_technical_question(
                 question_text = question_text.split(":", 1)[-1].strip()
 
             # Store the new question in Pinecone for future use
-            await store_question_in_pinecone(
-                question=question_text,
-                category=selected_category,
-                difficulty=selected_difficulty
-            )
+            # await store_question_in_pinecone(
+            #     question=question_text,
+            #     category=selected_category,
+            #     difficulty=selected_difficulty
+            # )
 
             # Update question history
             question_hash = get_question_hash(question_text)

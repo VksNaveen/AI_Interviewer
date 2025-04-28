@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import "../../src/Dashboard.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { BACKEND_URL } from "./config";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-const BACKEND_URL = "http://localhost:8000/api"; // Replace with your backend URL
 
 const ProjectInfo = () => (
   <div className="project-info">
@@ -69,7 +69,7 @@ const Dashboard = () => {
         return;
       }
 
-      const response = await axios.get("http://localhost:8000/profile/", {
+      const response = await axios.get(`${BACKEND_URL}/profile/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -126,13 +126,18 @@ const Dashboard = () => {
         if (!token) {
           console.error("No token found. Please log in again.");
           setMessage("You are not logged in. Please log in to view your interview summary.");
-          navigate("/login"); // Redirect to login if no token is found
+          navigate("/"); // Redirect to login if no token is found
           return;
         }
 
-        const response = await axios.get(`${BACKEND_URL}/interview/summary/`, {
-          headers: { Authorization: `Bearer ${token}` }, // Include the Bearer token
-        });
+        const response = await axios.get(
+          `${BACKEND_URL}/api/interview/summary/`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (response.data.message) {
           setMessage(response.data.message); // Set the "no interviews" message
@@ -154,7 +159,7 @@ const Dashboard = () => {
         console.error("Error fetching interview summary:", error);
         if (error.response && error.response.status === 401) {
           setMessage("Unauthorized access. Please log in again.");
-          navigate("/login"); // Redirect to login if unauthorized
+          navigate("/"); // Redirect to login if unauthorized
         } else {
           setMessage("Failed to fetch interview summary. Please try again later.");
         }
