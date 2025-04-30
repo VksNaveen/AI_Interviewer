@@ -19,4 +19,8 @@ __pycache__/
 
 # OS-specific
 .DS_Store
+<<<<<<< HEAD
 Thumbs.db
+=======
+Thumbs.db
+>>>>>>> 195f85cd3bd2a2ade036b48e7f6fc7554f9ffd43
