@@ -1,6 +1,22 @@
+# Environment variables
 .env
-node_modules
-node_modules
+
+# Node.js dependencies
+node_modules/
 frontend/node_modules/
-.frontend/node_modules
+
+# Python virtual environment
 venv/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+
+# Compiled files
+*.pyc
+
+# OS-specific
+.DS_Store
+Thumbs.db
