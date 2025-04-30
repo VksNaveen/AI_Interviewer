@@ -55,15 +55,15 @@ existing_indexes = [i.name for i in pc.list_indexes()]
 if index_name not in existing_indexes:
     pc.create_index(
         name=index_name,
-        dimension=1024,  # Updated dimension to match the model
+        dimension=384,  # Reduced dimension size for better space efficiency
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region=allowed_region)
     )
 
 # Initialize models
 index = pc.Index(index_name)
-# Initialize embedding model using a larger model
-embedding_model = SentenceTransformer('BAAI/bge-large-en-v1.5')
+# Initialize embedding model using a smaller but efficient model
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')  # Smaller model with 384 dimensions
 
 def get_embedding(text: str) -> list:
     """Generate embedding using sentence-transformers model"""
@@ -291,7 +291,7 @@ async def generate_technical_question(
         # Try to find existing question from Pinecone first
         try:
             # Generate a random vector to get diverse results
-            random_vector = [random.uniform(-1, 1) for _ in range(1024)]
+            random_vector = [random.uniform(-1, 1) for _ in range(384)]  # Updated dimension
             
             # Query Pinecone with filters
             query_response = index.query(
