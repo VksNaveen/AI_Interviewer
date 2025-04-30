@@ -1,66 +1,376 @@
 /* About.css */
-.about-container {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #4a00e0, #8e2de2);
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Page wrapper */
+.about-page-wrapper {
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #ffffff;
-  }
-  
-  .toolbar {
-    position: absolute;
+    width: 100vw;
+    overflow: hidden;
+    position: fixed;
     top: 0;
     left: 0;
+}
+
+/* Main container */
+.about-container {
+    height: 100%;
     width: 100%;
-    background: linear-gradient(90deg, #4a00e0, #8e2de2);
-    padding: 1rem;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: #6a11cb #f5f7fa;
+}
+
+/* Scrollbar Styles */
+.about-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+.about-container::-webkit-scrollbar-track {
+    background: #f5f7fa;
+    border-radius: 8px;
+}
+
+.about-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #6a11cb, #2575fc);
+    border-radius: 8px;
+    border: 2px solid #f5f7fa;
+}
+
+.about-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #2575fc, #6a11cb);
+}
+
+/* Toolbar */
+.about-toolbar {
+    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    padding: 15px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-  
-  .toolbar-title {
-    color: #ffffff;
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-align: center;
-    flex: 1;
-  }
-  
-  .toolbar-links {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.about-toolbar-left {
     display: flex;
-    gap: 1rem;
-  }
-  
-  .toolbar-link {
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: color 0.3s ease;
-  }
-  
-  .toolbar-link:hover {
-    color: #ff416c;
-  }
-  
-  .about-content {
-    margin-top: 100px;
+    align-items: center;
+    gap: 15px;
+}
+
+.about-toolbar-logo {
+    height: 40px;
+    width: auto;
+}
+
+.about-toolbar-title {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.about-toolbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.about-login-button {
+    background: white;
+    color: #6a11cb;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.about-login-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Content */
+.about-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Features Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin: 40px 0;
+}
+
+/* Footer positioning */
+.footer {
+    width: 100%;
+    margin-top: auto;
+}
+
+.about-header {
     text-align: center;
-    max-width: 600px;
-  }
-  
-  .about-title {
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-  }
-  
-  .about-description {
-    font-size: 1rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
-  }
+    margin-bottom: 60px;
+    padding-top: 20px;
+}
+
+.about-title {
+    font-size: 3.5rem;
+    background: linear-gradient(45deg, #6a11cb, #2575fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.about-subtitle {
+    font-size: 1.2rem;
+    color: #4a5568;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    color: #6a11cb;
+    margin-bottom: 20px;
+}
+
+.feature-title {
+    font-size: 1.5rem;
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.feature-description {
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.team-section {
+    margin-top: 60px;
+    text-align: center;
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.team-title {
+    font-size: 2.5rem;
+    color: #2d3748;
+    margin-bottom: 40px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.team-icon {
+    color: #6a11cb;
+}
+
+.team-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.team-member {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    padding: 20px;
+    border-radius: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-member:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(106, 17, 203, 0.15);
+}
+
+.member-name {
+    font-size: 1.3rem;
+    color: #2d3748;
+    margin: 0;
+    font-weight: 600;
+}
+
+.member-role {
+    color: #6a11cb;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.member-description {
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.contact-section {
+    margin-top: 80px;
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.contact-title {
+    font-size: 2.5rem;
+    color: #2d3748;
+    margin-bottom: 30px;
+    font-weight: 700;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #4a5568;
+    font-size: 1.1rem;
+}
+
+.contact-icon {
+    color: #6a11cb;
+    font-size: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .about-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .about-toolbar {
+        padding: 10px 15px;
+    }
+
+    .about-toolbar-title {
+        font-size: 1.2rem;
+    }
+
+    .about-content {
+        padding: 20px 15px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .about-title {
+        font-size: 2.5rem;
+    }
+
+    .about-subtitle {
+        font-size: 1rem;
+    }
+
+    .feature-card,
+    .team-member {
+        padding: 20px;
+    }
+
+    .team-title,
+    .contact-title {
+        font-size: 2rem;
+    }
+
+    .contact-info {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .team-list {
+        grid-template-columns: 1fr;
+        padding: 0 20px;
+    }
+
+    .member-name {
+        font-size: 1.1rem;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-card,
+.team-member {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+/* Animation for team members */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.team-member {
+    animation: fadeInUp 0.5s ease-out forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+}

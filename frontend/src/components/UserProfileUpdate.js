@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Select from "react-select"; 
 import "../../src/UserProfileUpdate.css"; 
 import { BACKEND_URL } from "./config";
+import { useAuth } from '../context/AuthContext';
 
 const roleOptions = [
   "Full Stack Developer",
@@ -33,6 +35,8 @@ const roleOptions = [
 ];
 
 const UserProfileUpdate = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [companyExperience, setCompanyExperience] = useState([{ company_name: "", years: "" }]);
   const [skills, setSkills] = useState([]);
   const [preferredRole, setPreferredRole] = useState("");
@@ -253,6 +257,21 @@ const UserProfileUpdate = () => {
 
   return (
     <div className="profile-update-page">
+      {/* Top Navigation Bar */}
+      <header className="toolbar">
+        <div className="toolbar-logo">
+          <img src="/AI_INT.png" alt="Logo" className="logo" />
+        </div>
+        <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
+        <div className="toolbar-links">
+          <a onClick={() => navigate("/dashboard")} className="toolbar-link">
+            Home
+          </a>
+          <a onClick={logout} className="toolbar-link">
+            Logout
+          </a>
+        </div>
+      </header>
 
       <div className="profile-update-container">
         <h2 className="page-title">Update Profile</h2>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { FaMicrophone, FaRobot } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBeforeUnload } from "react-router-dom";
 import "../../src/SelfIntroduction.css";
 import { BACKEND_URL } from "./config";
 
@@ -11,10 +11,46 @@ const SelfIntroduction = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isNextEnabled, setIsNextEnabled] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [subtitle, setSubtitle] = useState("");
+  const [showSubtitle, setShowSubtitle] = useState(false);
   const [audio, setAudio] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
+
+  // Cleanup function to stop recording and audio
+  const cleanup = () => {
+    if (audio) {
+      audio.pause();
+      audio.src = "";
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        stream.getTracks().forEach(track => track.stop());
+      })
+      .catch(err => console.error("Error accessing media devices:", err));
+  };
+
+  // Handle page reload
+  useBeforeUnload(() => {
+    cleanup();
+  });
+
+  // Handle navigation away from page
+  useEffect(() => {
+    const handleBeforeNavigate = () => {
+      cleanup();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeNavigate);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeNavigate);
+      cleanup();
+    };
+  }, [audio]);
 
   useEffect(() => {
     initiateSelfIntro();
@@ -25,26 +61,30 @@ const SelfIntroduction = () => {
       setStatus("Starting self-introduction...");
       setIsBlinking(true);
 
-      const token = localStorage.getItem("access_token"); // Retrieve the token
+      const token = localStorage.getItem("access_token");
 
       const startRes = await axios.post(
         `${BACKEND_URL}/api/startSelfIntroduction/`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the Bearer token
+            Authorization: `Bearer ${token}`,
           },
         }
       );
       const startFile = startRes.data.ai_prompt;
+      const subtitleText = startRes.data.subtitle;
       const startAudio = new Audio(`${BACKEND_URL}/static/${startFile}`);
       setAudio(startAudio);
+      setSubtitle(subtitleText);
+      setShowSubtitle(true);
 
       startAudio.play().catch((error) => {
         console.error("Audio playback failed:", error);
       });
 
       startAudio.onended = async () => {
+        setShowSubtitle(false);
         setIsBlinking(false);
         setStatus("Recording your introduction...");
         setIsRecording(true);
@@ -58,7 +98,7 @@ const SelfIntroduction = () => {
 
           const sttRes = await axios.post(`${BACKEND_URL}/api/speechToText/`, formData, {
             headers: {
-              Authorization: `Bearer ${token}`, // Include the Bearer token
+              Authorization: `Bearer ${token}`,
             },
           });
           const transcription = sttRes.data.transcription;
@@ -68,25 +108,30 @@ const SelfIntroduction = () => {
             { transcription },
             {
               headers: {
-                Authorization: `Bearer ${token}`, // Include the Bearer token
+                Authorization: `Bearer ${token}`,
               },
             }
           );
 
           const stopFile = stopRes.data.closing_prompt;
-          const feedback = stopRes.data.feedback; // Feedback from the backend
+          const feedback = stopRes.data.feedback;
+          const closingSubtitle = stopRes.data.subtitle;
           console.log("Feedback:", feedback);
 
           const stopAudio = new Audio(`${BACKEND_URL}/static/${stopFile}`);
+          setSubtitle(closingSubtitle);
+          setShowSubtitle(true);
+          
           stopAudio.play().catch((error) => {
             console.error("Error playing audio:", error);
-            // Continue with the flow even if audio fails
             setIsBlinking(false);
+            setShowSubtitle(false);
             setIsNextEnabled(true);
           });
 
           stopAudio.onended = () => {
             setIsBlinking(false);
+            setShowSubtitle(false);
             setIsNextEnabled(true);
           };
 
@@ -132,10 +177,9 @@ const SelfIntroduction = () => {
     });
   };
 
-  const handleNext = () => {
-    if (isNextEnabled) {
-      navigate("/mcq-round");
-    }
+  const handleNavigation = (path) => {
+    cleanup();
+    navigate(path);
   };
 
   return (
@@ -146,13 +190,13 @@ const SelfIntroduction = () => {
         </div>
         <div className="toolbar-title">AI INTERVIEW PREPARATION COACH</div>
         <div className="toolbar-links">
-          <button className="toolbar-link" onClick={() => navigate("/dashboard")}>
+          <button className="toolbar-link" onClick={() => handleNavigation("/dashboard")}>
             Home
           </button>
-          <button className="toolbar-link" onClick={() => navigate("/profile-update")}>
+          <button className="toolbar-link" onClick={() => handleNavigation("/profile-update")}>
             Profile
           </button>
-          <button className="toolbar-link" onClick={() => navigate("/")}>
+          <button className="toolbar-link" onClick={() => handleNavigation("/")}>
             Logout
           </button>
         </div>
@@ -167,6 +211,11 @@ const SelfIntroduction = () => {
             className={`ai-icon ${isBlinking ? "blinking" : ""}`}
           />
           <p className="status-text">{status}</p>
+          {showSubtitle && (
+            <div className="subtitle-container">
+              <p className="subtitle-text">{subtitle}</p>
+            </div>
+          )}
           <div className="mic-container">
             <FaMicrophone
               size={80}
@@ -180,13 +229,17 @@ const SelfIntroduction = () => {
         <div className="next-button-container">
           <button
             className={`next-button ${isNextEnabled ? "" : "disabled"}`}
-            onClick={handleNext}
+            onClick={() => handleNavigation("/mcq-round")}
             disabled={!isNextEnabled}
           >
             NEXT
           </button>
         </div>
       </main>
+
+      <footer className="footer">
+        <p>© 2024 AI Interview Coach. All rights reserved.</p>
+      </footer>
     </div>
   );
 };

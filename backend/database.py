@@ -10,7 +10,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 # ✅ Debugging output
-print(f"📢 DATABASE_URL Loaded: {DATABASE_URL}")
+if DATABASE_URL:
+    print(f"✅ Success: DATABASE_URL Loaded")
 
 if not DATABASE_URL:
     raise ValueError("❌ ERROR: DATABASE_URL is not set! Check your .env file.")

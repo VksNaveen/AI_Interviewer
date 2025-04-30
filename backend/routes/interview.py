@@ -55,25 +55,20 @@ existing_indexes = [i.name for i in pc.list_indexes()]
 if index_name not in existing_indexes:
     pc.create_index(
         name=index_name,
-        dimension=384,
+        dimension=1024,  # Updated dimension to match the model
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region=allowed_region)
     )
 
 # Initialize models
 index = pc.Index(index_name)
-# Initialize embedding model using a public model
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+# Initialize embedding model using a larger model
+embedding_model = SentenceTransformer('BAAI/bge-large-en-v1.5')
 
 def get_embedding(text: str) -> list:
     """Generate embedding using sentence-transformers model"""
-    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-    with torch.no_grad():
-        outputs = embedding_model(**inputs)
-    # Use mean pooling to get sentence embedding
-    embeddings = outputs.last_hidden_state.mean(dim=1)
-    return embeddings.squeeze().tolist()
+    embeddings = embedding_model.encode(text, normalize_embeddings=True)
+    return embeddings.tolist()
 
 client = Groq(api_key=GROQ_API_KEY)
 llm = ChatGroq(
@@ -152,7 +147,7 @@ async def start_self_introduction(
             "You will have 30 seconds to speak. Please share your name, background, and career goals. Begin speaking after the beep."
         )
         speech_file = generate_speech_from_text(prompt_text, "intro_start.wav")
-        return {"ai_prompt": speech_file}
+        return {"ai_prompt": speech_file, "subtitle": prompt_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to generate AI voice prompt.")
 
@@ -172,7 +167,7 @@ async def stop_self_introduction(
             f"Thank you {current_user.full_name} for your introduction. You may now proceed to the next round when you're ready."
         )
         speech_file = generate_speech_from_text(closing_prompt, "self_intro_stop.mp3")
-        return {"closing_prompt": speech_file, "feedback": feedback}
+        return {"closing_prompt": speech_file, "feedback": feedback, "subtitle": closing_prompt}
     except Exception as e:
         print(f"❌ Error in /stopSelfIntroduction/: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to stop self-introduction: {e}")
@@ -186,7 +181,7 @@ async def start_technical_round():
             "Please answer confidently and clearly."
         )
         speech_file = generate_speech_from_text(initial_prompt, "technical_start.mp3")
-        return {"ai_prompt": speech_file}
+        return {"ai_prompt": speech_file, "subtitle": initial_prompt}
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to start technical round.")
 
@@ -296,7 +291,7 @@ async def generate_technical_question(
         # Try to find existing question from Pinecone first
         try:
             # Generate a random vector to get diverse results
-            random_vector = [random.uniform(-1, 1) for _ in range(384)]
+            random_vector = [random.uniform(-1, 1) for _ in range(1024)]
             
             # Query Pinecone with filters
             query_response = index.query(
@@ -389,7 +384,7 @@ async def stop_tech_round(
         print(f"Stopping technical round for user: {current_user.id}")
 
         # Generate the closing prompt
-        closing_prompt = "Awesome! You've wrapped up the technical round. Great job! Hit submit to head back to the dashboard."
+        closing_prompt = f"Awesome {current_user.full_name}, You've wrapped up the technical round. Great job! Hit submit to head back to the dashboard."
         speech_file = generate_speech_from_text(closing_prompt, "technical_stop.mp3")
         print(f"✅ Generated speech file: {speech_file}")
 
@@ -397,7 +392,7 @@ async def stop_tech_round(
         feedback = get_technical_feedback_from_llama(prev_qa_list, db=db, user_id=current_user.id)
         print(f"✅ Feedback from LLaMA: {feedback}")
 
-        return {"closing_prompt": speech_file, "feedback": feedback}
+        return {"closing_prompt": speech_file, "feedback": feedback, "subtitle": closing_prompt}
     except Exception as e:
         print(f"❌ Error in /stopTechRound/: {e}")
         raise HTTPException(status_code=500, detail="Failed to stop technical round.")
@@ -582,66 +577,76 @@ def get_technical_feedback_from_llama(prev_qa_list: List[Dict[str, str]], db: Se
 
         # Construct the prompt for LLaMA
         prompt = (
-    "You are evaluating a technical interview. Based on the candidate's answers, "
-    "assign scores in the following categories:\n"
-    "- communication_score (out of 10)"
-    "- technical_knowledge_score (out of 10)"
-    "- confidence_score (out of 10)"
-    "Please analyze all answers together and provide just one overall score and one sentence of feedback (exactly 8-12 words).\n\n"
-    "Final response should be ONLY in this exact JSON format: Example\n"
-    "{\"communication_score\": 6.0, \"technical_knowledge_score\": 5.5, \"confidence_score\": 6.5, \"feedback\": \"Strong fundamentals, needs more depth and clarity.\"}\n\n"
-    "Questions and Answers:\n"
-)
+            "You are evaluating a technical interview. Based on the candidate's answers, "
+            "assign scores in the following categories:\n"
+            "- communication_score (out of 10)\n"
+            "- technical_knowledge_score (out of 10)\n"
+            "- confidence_score (out of 10)\n"
+            "Please analyze all answers together and provide just one overall score and one sentence of feedback (exactly 8-12 words).\n\n"
+            "Return ONLY a valid JSON object with these exact keys, nothing else:\n"
+            "{\n"
+            "  \"communication_score\": number,\n"
+            "  \"technical_knowledge_score\": number,\n"
+            "  \"confidence_score\": number,\n"
+            "  \"feedback\": \"string\"\n"
+            "}\n\n"
+            "Questions and Answers:\n"
+        )
 
         for qa in prev_qa_list:
             prompt += f"Question: {qa['question']}\nAnswer: {qa['answer']}\n\n"
-
-        prompt += "Return response as a JSON object."
 
         print(f"📜 Prompt for LLaMA: {prompt}")
 
         # Call LLaMA to evaluate the responses
         llama_response = llm.invoke(prompt)
-
-        # Extract the content from the response
-        if hasattr(llama_response, "content"):
-            evaluation_result = llama_response.content
-        else:
-            evaluation_result = str(llama_response)
-
+        evaluation_result = getattr(llama_response, "content", str(llama_response))
         print(f"✅ Raw LLaMA Response: {evaluation_result}")
 
-        # Parse the response as JSON
+        # Extract JSON from the response
         try:
-            evaluation_data = json.loads(evaluation_result)  # Parse JSON response
-            comm_score = evaluation_data.get("communication_score", 0.0)
-            tech_score = evaluation_data.get("technical_knowledge_score", 0.0)
-            conf_score = evaluation_data.get("confidence_score", 0.0)
-            feedback = evaluation_data.get("feedback", "No feedback provided.")
+            # Find JSON-like structure in the response
+            json_start = evaluation_result.find('{')
+            json_end = evaluation_result.rfind('}') + 1
+            
+            if json_start == -1 or json_end == 0:
+                raise ValueError("No JSON structure found in response")
+            
+            json_str = evaluation_result[json_start:json_end]
+            evaluation_data = json.loads(json_str)
+
+            # Validate required fields and data types
+            required_fields = ["communication_score", "technical_knowledge_score", "confidence_score", "feedback"]
+            for field in required_fields:
+                if field not in evaluation_data:
+                    raise ValueError(f"Missing required field: {field}")
+                
+                if field != "feedback" and not isinstance(evaluation_data[field], (int, float)):
+                    evaluation_data[field] = float(evaluation_data[field])
+
+            # Save the score to the database
+            save_technical_score(
+                user_id=user_id,
+                comm=float(evaluation_data["communication_score"]),
+                tech=float(evaluation_data["technical_knowledge_score"]),
+                conf=float(evaluation_data["confidence_score"]),
+                feedback=evaluation_data["feedback"],
+                db=db
+            )
+
+            return evaluation_data
+
         except json.JSONDecodeError as e:
-            print(f"❌ Error parsing LLaMA response as JSON: {e}")
-            raise HTTPException(status_code=500, detail="Failed to parse LLaMA response.")
-
-        # Save the score to the database
-        save_technical_score(
-            user_id=user_id,
-            comm=comm_score,
-            tech=tech_score,
-            conf=conf_score,
-            feedback=feedback,
-            db=db
-        )
-
-        return {
-            "communication_score": comm_score,
-            "technical_knowledge_score": tech_score,
-            "confidence_score": conf_score,
-            "feedback": feedback
-        }
+            print(f"❌ JSON Parse Error: {e}")
+            print(f"❌ Attempted to parse: {json_str}")
+            raise HTTPException(status_code=500, detail="Failed to parse evaluation response")
+        except ValueError as e:
+            print(f"❌ Validation Error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     except Exception as e:
         print(f"❌ Error in get_technical_feedback_from_llama(): {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing technical feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing technical feedback: {str(e)}")
 
 
 def get_self_intro_feedback_from_llama(transcript: str, db: Session, user_id: int):

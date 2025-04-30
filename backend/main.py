@@ -16,7 +16,8 @@ app = FastAPI()
 # Configure CORS
 ALLOWED_ORIGINS = [
     "https://ai-interviewer-lilac.vercel.app",
-    "https://ai-interviewer-ciu9.onrender.com"  # Your backend URL
+    "https://ai-interviewer-ciu9.onrender.com",  # Your backend URL
+    "http://localhost:3000"
 ]
 
 app.add_middleware(

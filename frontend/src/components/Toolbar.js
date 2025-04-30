@@ -1,11 +1,28 @@
 // src/components/Toolbar.js
 import React from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../../src/Toolbar.css';
 import { BACKEND_URL } from "./config";
 
 const Toolbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, logout } = useAuth();
+
+  // Don't show toolbar on login page or profile update page
+  if (location.pathname === '/' || location.pathname === '/profile-update') {
+    return null;
+  }
+
+  // Only show toolbar if authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <header className="toolbar">
@@ -17,15 +34,12 @@ const Toolbar = () => {
         <button className="toolbar-link" onClick={() => navigate("/dashboard")}>
           Home
         </button>
-        <button className="toolbar-link" onClick={() => navigate("/profile-update")}>
+        <a onClick={() => navigate("/profile-update")} className="toolbar-link">
           Profile
-        </button>
-        <button className="toolbar-link" onClick={() => {
-          localStorage.removeItem("access_token");
-          navigate("/");
-        }}>
+        </a>
+        <a onClick={handleLogout} className="toolbar-link">
           Logout
-        </button>
+        </a>
       </div>
     </header>
   );

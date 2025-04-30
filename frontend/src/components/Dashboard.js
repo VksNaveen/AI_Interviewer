@@ -3,7 +3,10 @@ import "../../src/Dashboard.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "./config";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useAuth } from '../context/AuthContext';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+         RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+         BarChart, Bar, ComposedChart, Area } from 'recharts';
 
 
 const ProjectInfo = () => (
@@ -56,6 +59,7 @@ const ProjectInfo = () => (
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [summary, setSummary] = useState(null); // Store the summary data
   const [message, setMessage] = useState(""); // Store the "no interviews" message
   const [chartData, setChartData] = useState([]); // Data for the chart
@@ -144,15 +148,20 @@ const Dashboard = () => {
         } else {
           setSummary(response.data); // Set the summary data
 
-          // Prepare data for the chart
+          // Prepare and sort data for the chart
           const chartData = response.data.self_intro.map((interview, index) => ({
-            date: new Date(interview.timestamp).toLocaleDateString(),
+            date: new Date(interview.timestamp).getTime(), // Convert to timestamp for sorting
+            dateDisplay: new Date(interview.timestamp).toLocaleDateString(),
             communication: interview.communication_score,
             confidence: interview.confidence_score,
             professionalism: interview.professionalism_score,
             mcq: response.data.mcq[index]?.score || 0,
             technical: response.data.technical[index]?.technical_knowledge_score || 0,
           }));
+
+          // Sort by date in ascending order (oldest to newest)
+          chartData.sort((a, b) => a.date - b.date);
+
           setChartData(chartData);
         }
       } catch (error) {
@@ -181,7 +190,7 @@ const Dashboard = () => {
           <a onClick={() => navigate("/profile-update")} className="toolbar-link">
             Profile
           </a>
-          <a onClick={() => navigate("/")} className="toolbar-link">
+          <a onClick={logout} className="toolbar-link">
             Logout
           </a>
         </div>
@@ -195,36 +204,395 @@ const Dashboard = () => {
           <>
             <h2 className="page-heading">Interview Summary</h2>
 
-            {/* Line Chart for Scores */}
-            <div className="chart-container">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', margin: '20px 0' }}>
+              {/* Trend Line Chart */}
+              <div className="chart-container" style={{ 
+                background: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#2c3e50' }}>
+                  Score Trends Over Time
+                  <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px' }}>
+                    Track your progress across all categories
+                  </div>
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart 
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorComm" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis 
+                      dataKey="dateDisplay" 
+                      tickFormatter={(date) => date}
+                      label={{ 
+                        value: 'Interview Timeline', 
+                        position: 'bottom', 
+                        offset: 0,
+                        style: { textAnchor: 'middle', fill: '#666', fontSize: '0.9em' }
+                      }}
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      stroke="#666"
+                    />
+                    <YAxis 
+                      domain={[0, 10]}
+                      label={{ 
+                        value: 'Performance Score', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle', fill: '#666', fontSize: '0.9em' }
+                      }}
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      stroke="#666"
+                      tickCount={6}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        padding: '10px'
+                      }}
+                      formatter={(value, name) => [`${Number(value).toFixed(1)} / 10`, name]}
+                      labelFormatter={(date) => `Interview Date: ${date}`}
+                    />
+                    <Legend 
+                      verticalAlign="top"
+                      align="center"
+                      height={36}
+                      wrapperStyle={{
+                        paddingTop: '10px',
+                        paddingBottom: '20px',
+                        fontSize: '12px',
+                        fontWeight: 500
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="communication" 
+                      fill="url(#colorComm)"
+                      stroke="#8884d8" 
+                      name="Communication"
+                      strokeWidth={2}
+                    />
+                    {[
+                      { key: 'confidence', name: 'Confidence', color: '#82ca9d' },
+                      { key: 'professionalism', name: 'Professionalism', color: '#ffc658' },
+                      { key: 'mcq', name: 'MCQ Score', color: '#ff7300' },
+                      { key: 'technical', name: 'Technical Knowledge', color: '#0088fe' }
+                    ].map((metric) => (
+                      <Line 
+                        key={metric.key}
+                        type="monotone" 
+                        dataKey={metric.key} 
+                        name={metric.name}
+                        stroke={metric.color}
+                        strokeWidth={2}
+                        dot={{ 
+                          r: 4,
+                          strokeWidth: 2,
+                          fill: '#fff',
+                          stroke: metric.color
+                        }}
+                        activeDot={{
+                          r: 6,
+                          stroke: '#fff',
+                          strokeWidth: 2,
+                          fill: metric.color,
+                          className: 'animated-dot'
+                        }}
+                      />
+                    ))}
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Radar Chart for Latest Scores */}
+              <div className="chart-container" style={{ 
+                background: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#2c3e50' }}>
+                  Latest Performance Overview
+                  <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px' }}>
+                    Your most recent interview scores
+                  </div>
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={[chartData[chartData.length - 1]]}>
+                    <PolarGrid gridType="circle" />
+                    <PolarAngleAxis
+                      dataKey="name"
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      axisLine={{ stroke: '#666' }}
+                    />
+                    <PolarRadiusAxis
+                      angle={90}
+                      domain={[0, 10]}
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      axisLine={{ stroke: '#666' }}
+                      tickCount={6}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        padding: '10px'
+                      }}
+                      formatter={(value) => [`${Number(value).toFixed(1)} / 10`]}
+                    />
+                    <Radar
+                      name="Latest Scores"
+                      dataKey="value"
+                      stroke="#8884d8"
+                      fill="#8884d8"
+                      fillOpacity={0.6}
+                      data={[
+                        { name: 'Communication', value: chartData[chartData.length - 1]?.communication || 0 },
+                        { name: 'Confidence', value: chartData[chartData.length - 1]?.confidence || 0 },
+                        { name: 'Professionalism', value: chartData[chartData.length - 1]?.professionalism || 0 },
+                        { name: 'MCQ', value: chartData[chartData.length - 1]?.mcq || 0 },
+                        { name: 'Technical', value: chartData[chartData.length - 1]?.technical || 0 }
+                      ]}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Bar Chart for Average Scores */}
+              <div className="chart-container" style={{ 
+                background: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                gridColumn: '1 / -1'
+              }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#2c3e50' }}>
+                  Average Performance by Category
+                  <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px' }}>
+                    Your overall performance across all interviews
+                  </div>
+                </h3>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
+                  <BarChart 
+                    data={[{
+                      communication: chartData.reduce((acc, curr) => acc + curr.communication, 0) / chartData.length,
+                      confidence: chartData.reduce((acc, curr) => acc + curr.confidence, 0) / chartData.length,
+                      professionalism: chartData.reduce((acc, curr) => acc + curr.professionalism, 0) / chartData.length,
+                      mcq: chartData.reduce((acc, curr) => acc + curr.mcq, 0) / chartData.length,
+                      technical: chartData.reduce((acc, curr) => acc + curr.technical, 0) / chartData.length
+                    }]}
+                    margin={{ top: 40, right: 30, left: 20, bottom: 20 }}
+                  >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="communication" stroke="#8884d8" name="Communication" />
-                  <Line type="monotone" dataKey="confidence" stroke="#82ca9d" name="Confidence" />
-                  <Line type="monotone" dataKey="professionalism" stroke="#ffc658" name="Professionalism" />
-                  <Line type="monotone" dataKey="mcq" stroke="#3498db" name="MCQ Score" />
-                  <Line type="monotone" dataKey="technical" stroke="#e74c3c" name="Technical Knowledge" />
-                </LineChart>
+                    <XAxis 
+                      dataKey="name"
+                      label={{ 
+                        value: 'Interview Categories', 
+                        position: 'bottom', 
+                        offset: 0,
+                        style: { textAnchor: 'middle', fill: '#666', fontSize: '0.9em' }
+                      }}
+                    />
+                    <YAxis 
+                      domain={[0, 10]}
+                      label={{ 
+                        value: 'Average Score', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle', fill: '#666', fontSize: '0.9em' }
+                      }}
+                      tickCount={6}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        padding: '10px'
+                      }}
+                      formatter={(value) => [`${Number(value).toFixed(1)} / 10`]}
+                    />
+                    <Legend 
+                      verticalAlign="top"
+                      align="center"
+                      height={36}
+                      wrapperStyle={{
+                        paddingTop: '10px',
+                        paddingBottom: '20px',
+                        fontSize: '12px',
+                        fontWeight: 500
+                      }}
+                    />
+                    <Bar 
+                      dataKey="communication" 
+                      name="Communication" 
+                      fill="#8884d8"
+                      radius={[4, 4, 0, 0]}
+                      label={{
+                        position: 'top',
+                        formatter: (value) => `${Number(value).toFixed(1)}`,
+                        fontSize: 12,
+                        fill: '#666'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="confidence" 
+                      name="Confidence" 
+                      fill="#82ca9d"
+                      radius={[4, 4, 0, 0]}
+                      label={{
+                        position: 'top',
+                        formatter: (value) => `${Number(value).toFixed(1)}`,
+                        fontSize: 12,
+                        fill: '#666'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="professionalism" 
+                      name="Professionalism" 
+                      fill="#ffc658"
+                      radius={[4, 4, 0, 0]}
+                      label={{
+                        position: 'top',
+                        formatter: (value) => `${Number(value).toFixed(1)}`,
+                        fontSize: 12,
+                        fill: '#666'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="mcq" 
+                      name="MCQ Score" 
+                      fill="#ff7300"
+                      radius={[4, 4, 0, 0]}
+                      label={{
+                        position: 'top',
+                        formatter: (value) => `${Number(value).toFixed(1)}`,
+                        fontSize: 12,
+                        fill: '#666'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="technical" 
+                      name="Technical Knowledge" 
+                      fill="#0088fe"
+                      radius={[4, 4, 0, 0]}
+                      label={{
+                        position: 'top',
+                        formatter: (value) => `${Number(value).toFixed(1)}`,
+                        fontSize: 12,
+                        fill: '#666'
+                      }}
+                    />
+                  </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
 
-            {/* Feedback Section */}
-            <div className="feedback-container">
-              <h3>Overall Performance</h3>
-              <p>
-                Average Score:{" "}
+            {/* Add some CSS for animations */}
+            <style>
+              {`
+                .animated-dot {
+                  animation: pulse 1s infinite;
+                }
+                
+                @keyframes pulse {
+                  0% { r: 6; }
+                  50% { r: 8; }
+                  100% { r: 6; }
+                }
+              `}
+            </style>
+
+            {/* Overall Score Display with Gradient */}
+            <div className="overall-score-container" style={{ 
+              marginTop: '20px', 
+              textAlign: 'center',
+              background: '#fff',
+              padding: '20px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              {summary && (
+                <>
+                  <h3 style={{ color: '#2c3e50', marginBottom: '15px' }}>Overall Score</h3>
+                  <div 
+                    style={{
+                      display: 'inline-block',
+                      padding: '25px 50px',
+                      borderRadius: '12px',
+                      fontSize: '32px',
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      background: (() => {
+                        const score = (
+                          (summary.self_intro.reduce((acc, curr) => acc + curr.communication_score, 0) +
+                            summary.mcq.reduce((acc, curr) => acc + (curr.score || 0), 0) +
+                            summary.technical.reduce((acc, curr) => acc + (curr.technical_knowledge_score || 0), 0)) /
+                          (summary.self_intro.length + summary.mcq.length + summary.technical.length)
+                        ) * 10;
+
+                        // Enhanced color gradient logic
+                        if (score <= 40) {
+                          // Red to Orange (0-40%)
+                          const ratio = score / 40;
+                          return `linear-gradient(135deg, 
+                            rgb(220, 53, 69) ${100 - ratio * 100}%, 
+                            rgb(255, 123, 0) ${ratio * 100}%)`;
+                        } else if (score <= 70) {
+                          // Orange to Yellow (41-70%)
+                          const ratio = (score - 40) / 30;
+                          return `linear-gradient(135deg, 
+                            rgb(255, 123, 0) ${100 - ratio * 100}%, 
+                            rgb(255, 193, 7) ${ratio * 100}%)`;
+                        } else {
+                          // Yellow to Green (71-100%)
+                          const ratio = (score - 70) / 30;
+                          return `linear-gradient(135deg, 
+                            rgb(255, 193, 7) ${100 - ratio * 100}%, 
+                            rgb(40, 167, 69) ${ratio * 100}%)`;
+                        }
+                      })(),
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      transition: 'transform 0.2s ease',
+                      cursor: 'default',
+                      ':hover': {
+                        transform: 'scale(1.02)'
+                      }
+                    }}
+                  >
                 {(
                   (summary.self_intro.reduce((acc, curr) => acc + curr.communication_score, 0) +
                     summary.mcq.reduce((acc, curr) => acc + (curr.score || 0), 0) +
                     summary.technical.reduce((acc, curr) => acc + (curr.technical_knowledge_score || 0), 0)) /
-                  (summary.self_intro.length + summary.mcq.length + summary.technical.length)
-                ).toFixed(2)}
-              </p>
+                      (summary.self_intro.length + summary.mcq.length + summary.technical.length) * 10
+                    ).toFixed(1)}%
+                  </div>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    color: '#666', 
+                    marginTop: '10px',
+                    fontStyle: 'italic'
+                  }}>
+                    Based on your performance across all interview rounds
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Combined Interview Cards */}

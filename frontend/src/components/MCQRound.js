@@ -78,6 +78,12 @@ const MCQRound = () => {
 
   const handleNextSlide = () => {
     setCurrentSlide(2); // Move to Slide 2
+    window.scrollTo(0, 0); // Scroll to top of the page
+  };
+
+  const handlePreviousSlide = () => {
+    setCurrentSlide(1); // Move back to Slide 1
+    window.scrollTo(0, 0); // Scroll to top of the page
   };
 
   const handleSubmit = async () => {
@@ -178,9 +184,14 @@ const MCQRound = () => {
             </button>
           )}
           {currentSlide === 2 && (
-            <button className="mcq-submit-button" onClick={handleSubmit}>
-              Submit
-            </button>
+            <>
+              <button className="mcq-back-button" onClick={handlePreviousSlide}>
+                Back
+              </button>
+              <button className="mcq-submit-button" onClick={handleSubmit}>
+                Submit
+              </button>
+            </>
           )}
         </div>
       </main>
